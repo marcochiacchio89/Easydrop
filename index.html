@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyDrop PRO</title>
-    <!-- Caricamento Google Maps e Places API con callback sicuro -->
+    <!-- Caricamento Google Maps e Places API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
@@ -38,7 +38,7 @@
     <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
 
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Inizia a scrivere la via...">
+    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
 
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
@@ -67,17 +67,18 @@
             { componentRestrictions: { country: 'it' } }
         );
 
-        // Orienta i suggerimenti delle vie verso il comune selezionato
+        // Quando selezioni il comune, "inchiodiamo" la ricerca delle vie
         autocompleteComune.addListener('place_changed', function() {
             const place = autocompleteComune.getPlace();
-            if (place && place.geometry) {
-                if (place.geometry.viewport) {
-                    autocompleteInd.setBounds(place.geometry.viewport);
-                } else if (place.geometry.location) {
-                    const bounds = new google.maps.LatLngBounds();
-                    bounds.extend(place.geometry.location);
-                    autocompleteInd.setBounds(bounds);
-                }
+            if (place && place.geometry && place.geometry.viewport) {
+                // Imposta i confini geografici del comune
+                autocompleteInd.setBounds(place.geometry.viewport);
+                // ATTIVA IL BLOCCO RIGIDO: google ora suggerirà solo vie in questo comune
+                autocompleteInd.setOptions({ strictBounds: true });
+                
+                // Pulizia UI
+                document.getElementById('indirizzo').value = '';
+                document.getElementById('indirizzo').placeholder = "Via in " + place.name;
             }
         });
     }
@@ -93,7 +94,6 @@
 
         const indirizzoCompleto = `${ind}, ${com}`;
         
-        // Recupera subito le coordinate se la via è stata selezionata dalla lista
         let lat = null;
         let lng = null;
         const place = autocompleteInd.getPlace();
@@ -156,7 +156,7 @@
     }
 
     function calcolaDistanza(lat1, lon1, lat2, lon2) {
-        const R = 6371; // chilometri
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -182,12 +182,12 @@
 
     async function ottimizzaGiro() {
         if (tappe.length === 0) {
-            alert("Aggiungi almeno una via prima di ottimizzare!");
+            alert("Aggiungi almeno una via!");
             return;
         }
 
         if (!navigator.geolocation) {
-            alert("GPS non supportato dal browser.");
+            alert("GPS non supportato.");
             return;
         }
 
@@ -195,7 +195,6 @@
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
 
-            // Recupera le coordinate GPS mancanti per ogni indirizzo inserito
             for (let t of tappe) {
                 if (t.lat === null || t.lng === null) {
                     const coords = await geocodeAddress(t.indirizzo);
@@ -206,7 +205,6 @@
                 }
             }
 
-            // Ordina la lista dalla via più vicina alla più lontana rispetto alla tua posizione
             tappe.sort((a, b) => {
                 if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
                 const distA = (a.lat !== null && a.lng !== null) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
@@ -216,20 +214,18 @@
 
             giroIniziato = false;
             render();
-
-            alert("Giro riordinato con successo dalla tappa più vicina a quella più lontana!");
+            alert("Giro ottimizzato dalla tua posizione!");
         }, (err) => {
-            alert("Attiva il GPS del telefono per permettere il calcolo delle distanze!");
+            alert("Attiva il GPS!");
         });
     }
 
     function avanziaGiro() {
         const prossimoIndex = tappe.findIndex(t => !t.fatta);
         if (prossimoIndex === -1) {
-            alert("Tutte le consegne sono state completate!");
+            alert("Tutto consegnato!");
             return;
         }
-
         giroIniziato = true;
         apriNavigatore(prossimoIndex);
     }
@@ -242,7 +238,6 @@
         }
 
         const prossimoIndex = tappe.findIndex(t => !t.fatta);
-
         if (prossimoIndex === -1) {
             btnGuided.style.display = 'block';
             btnGuided.innerText = "🎉 GIRO COMPLETATO";
