@@ -39,7 +39,6 @@
         }
 
         /* HEADER */
-
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -64,7 +63,6 @@
         }
 
         /* MENU */
-
         .side-menu {
             height: 100%;
             width: 0;
@@ -105,7 +103,6 @@
         }
 
         /* FORM */
-
         label {
             font-weight: bold;
             font-size: 14px;
@@ -156,9 +153,9 @@
             color: #333;
         }
 
-        /* ================================
-           FOTOCAMERA LDV
-           ================================ */
+        /* ============================= */
+        /* FOTOCAMERA LDV */
+        /* ============================= */
 
         .camera-container {
             display: flex;
@@ -166,7 +163,7 @@
             gap: 10px;
             margin: 8px 0 12px 0;
             background: #f8f9fa;
-            padding: 10px 12px;
+            padding: 9px 12px;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
         }
@@ -176,23 +173,24 @@
         }
 
         .camera-button {
-            flex-shrink: 0;
-            width: 48px;
-            height: 42px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 7px;
-            cursor: pointer;
-            font-size: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.15s ease, opacity 0.2s ease;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            margin: 0;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 21px;
+            flex-shrink: 0;
+            box-sizing: border-box;
         }
 
-        .camera-button:active {
-            transform: scale(0.94);
+        .camera-button:hover {
+            opacity: 0.9;
         }
 
         .camera-text {
@@ -200,113 +198,35 @@
             font-weight: 600;
             color: #555;
             line-height: 1.3;
-            margin: 0;
         }
 
-        /* OVERLAY SCANSIONE */
-
-        .ocr-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.78);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .ocr-overlay.hidden {
+        /* ANTEPRIMA FOTO */
+        .photo-preview {
             display: none;
-        }
-
-        .ocr-card {
-            background: white;
-            padding: 20px;
-            border-radius: 14px;
-            width: 100%;
-            max-width: 380px;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
-            box-sizing: border-box;
-        }
-
-        .ocr-title {
-            margin: 0 0 10px 0;
-            color: #333;
-            font-size: 18px;
-        }
-
-        .ocr-subtitle {
-            font-size: 13px;
-            color: #666;
-            margin: 10px 0;
-            line-height: 1.4;
-        }
-
-        .preview-container {
-            position: relative;
-            width: 100%;
-            max-height: 260px;
-            overflow: hidden;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            margin: 15px 0;
+        }
+
+        .photo-preview img {
+            display: block;
+            width: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 6px;
             background: #000;
         }
 
-        .preview-container img {
-            display: block;
-            width: 100%;
-            max-height: 260px;
-            object-fit: contain;
-        }
-
-        .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #28a745;
-            box-shadow: 0 0 10px #28a745;
-            animation: scan 1.6s infinite ease-in-out;
-        }
-
-        @keyframes scan {
-            0% {
-                top: 0%;
-            }
-
-            50% {
-                top: 96%;
-            }
-
-            100% {
-                top: 0%;
-            }
-        }
-
-        .scan-status {
-            font-size: 13px;
-            color: #28a745;
-            font-weight: bold;
-            margin: 5px 0 12px 0;
-        }
-
-        .btn-cancel {
-            background: #dc3545;
-            color: white;
-            padding: 11px;
-            border: none;
-            border-radius: 6px;
-            width: 100%;
-            font-weight: bold;
-            cursor: pointer;
+        .photo-preview-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 7px;
+            text-align: center;
         }
 
         /* BUTTONS */
-
         .btn {
             width: 100%;
             padding: 14px;
@@ -338,7 +258,6 @@
         }
 
         /* BATCH */
-
         .batch-actions {
             display: flex;
             justify-content: space-between;
@@ -379,7 +298,6 @@
         }
 
         /* TAPPE */
-
         .tappa {
             display: flex;
             justify-content: space-between;
@@ -449,9 +367,8 @@
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
-    <!-- MENU -->
+    <!-- MENU HAMBURGER -->
     <div id="sideMenu" class="side-menu">
-
         <button class="close-btn" onclick="chiudiMenu()">&times;</button>
 
         <a href="#" onclick="chiudiMenu(); alert('Sezione Profilo in arrivo');">
@@ -465,11 +382,9 @@
         <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo');">
             🛠️ Assistenza
         </a>
-
     </div>
 
     <!-- DITTA -->
-
     <label>Ditta:</label>
 
     <select id="ditta" onchange="cambiaTemaDitta()">
@@ -481,11 +396,9 @@
     </select>
 
     <!-- COMUNE -->
-
     <label>Comune:</label>
 
     <div class="input-container">
-
         <input
             type="text"
             id="comune"
@@ -498,15 +411,12 @@
         >
             &times;
         </span>
-
     </div>
 
     <!-- INDIRIZZO -->
-
     <label>Indirizzo:</label>
 
     <div class="input-container">
-
         <input
             type="text"
             id="indirizzo"
@@ -520,12 +430,11 @@
         >
             &times;
         </span>
-
     </div>
 
-    <!-- ==========================
-         FOTOCAMERA LDV
-         ========================== -->
+    <!-- ============================= -->
+    <!-- FOTOCAMERA LDV -->
+    <!-- ============================= -->
 
     <div class="camera-container">
 
@@ -541,19 +450,33 @@
         <label
             for="cameraInput"
             class="camera-button"
-            title="Scatta foto LDV"
+            title="Scatta foto della LDV"
         >
             📷
         </label>
 
-        <p class="camera-text">
+        <span class="camera-text">
             Usa la fotocamera per inserire automaticamente l'indirizzo
-        </p>
+        </span>
+
+    </div>
+
+    <!-- ANTEPRIMA FOTO -->
+    <div id="photoPreview" class="photo-preview">
+
+        <img
+            id="photoPreviewImage"
+            src=""
+            alt="Anteprima foto LDV"
+        >
+
+        <div class="photo-preview-text">
+            Foto acquisita. In futuro questa immagine verrà analizzata dall'IA per riconoscere automaticamente l'indirizzo della LDV.
+        </div>
 
     </div>
 
     <!-- NOTE -->
-
     <label>Note (facoltativo):</label>
 
     <input
@@ -562,8 +485,7 @@
         placeholder="es. Citofono Rossi, ZTL, Pacco blu..."
     >
 
-    <!-- BUTTONS -->
-
+    <!-- AGGIUNGI -->
     <button
         class="btn btn-add"
         onclick="aggiungiTappa()"
@@ -571,6 +493,7 @@
         + Aggiungi Tappa
     </button>
 
+    <!-- OTTIMIZZA -->
     <button
         class="btn btn-opt"
         onclick="ottimizzaGiro()"
@@ -578,16 +501,16 @@
         📍 Ottimizza Giro (GPS)
     </button>
 
+    <!-- INIZIA GIRO -->
     <button
         id="btn-guided"
         class="btn btn-guided"
-        onclick="avanzaiGiro()"
+        onclick="avviaGiro()"
     >
         🚀 INIZIA GIRO
     </button>
 
     <!-- BATCH -->
-
     <div
         id="batch-bar"
         style="display:none;"
@@ -632,11 +555,9 @@
             </button>
 
         </div>
-
     </div>
 
     <!-- LISTA TAPPE -->
-
     <div
         id="lista"
         style="margin-top: 15px;"
@@ -645,196 +566,103 @@
 </div>
 
 
-<!-- ==========================
-     MODALE FOTOCAMERA / SCANSIONE
-     ========================== -->
-
-<div
-    id="ocrOverlay"
-    class="ocr-overlay hidden"
->
-
-    <div class="ocr-card">
-
-        <h3 class="ocr-title">
-            📦 Lettura LDV
-        </h3>
-
-        <div class="preview-container">
-
-            <img
-                id="ldvPreview"
-                src=""
-                alt="Anteprima LDV"
-            >
-
-            <div class="scan-line"></div>
-
-        </div>
-
-        <div class="scan-status">
-            🔍 Analisi dell'immagine...
-        </div>
-
-        <p class="ocr-subtitle">
-            Questa schermata è attualmente una simulazione visiva.
-            In una fase successiva collegheremo qui l'IA per leggere
-            automaticamente l'indirizzo presente sulla LDV.
-        </p>
-
-        <button
-            class="btn-cancel"
-            onclick="annullaScansione()"
-        >
-            Annulla
-        </button>
-
-    </div>
-
-</div>
-
-
 <script>
 
-    /* ==========================================
-       VARIABILI PRINCIPALI
-       ========================================== */
+    /* ============================= */
+    /* VARIABILI PRINCIPALI */
+    /* ============================= */
 
     let tappe = [];
-
     let geocoder;
-
     let autocompleteComune;
-
     let autocompleteInd;
-
     let giroIniziato = false;
-
     let comuneSelezionato = "";
 
 
-    /* ==========================================
-       MENU
-       ========================================== */
+    /* ============================= */
+    /* MENU */
+    /* ============================= */
 
     function apriMenu() {
-
         document.getElementById("sideMenu").style.width = "250px";
-
     }
-
 
     function chiudiMenu() {
-
         document.getElementById("sideMenu").style.width = "0";
-
     }
 
 
-    /* ==========================================
-       TEMA DITTA
-       ========================================== */
+    /* ============================= */
+    /* TEMA DITTA */
+    /* ============================= */
 
     function cambiaTemaDitta() {
 
-        const ditta =
-            document.getElementById('ditta').value;
-
-        const root =
-            document.documentElement;
-
+        const ditta = document.getElementById('ditta').value;
+        const root = document.documentElement;
 
         if (ditta === "SDA") {
 
             root.style.setProperty('--bg-body', '#eef3f9');
-
             root.style.setProperty('--primary-color', '#003366');
-
             root.style.setProperty('--btn-add', '#003366');
-
             root.style.setProperty('--btn-opt', '#d4af37');
-
             root.style.setProperty('--btn-guided', '#003366');
 
-        }
-
-        else if (ditta === "BRT") {
+        } else if (ditta === "BRT") {
 
             root.style.setProperty('--bg-body', '#fcf2f2');
-
             root.style.setProperty('--primary-color', '#cc0000');
-
             root.style.setProperty('--btn-add', '#cc0000');
-
             root.style.setProperty('--btn-opt', '#333333');
-
             root.style.setProperty('--btn-guided', '#cc0000');
 
-        }
-
-        else if (ditta === "Poste Italiane") {
+        } else if (ditta === "Poste Italiane") {
 
             root.style.setProperty('--bg-body', '#fdfae5');
-
             root.style.setProperty('--primary-color', '#004225');
-
             root.style.setProperty('--btn-add', '#e6af00');
-
             root.style.setProperty('--btn-opt', '#004225');
-
             root.style.setProperty('--btn-guided', '#e6af00');
 
-        }
-
-        else if (ditta === "GLS") {
+        } else if (ditta === "GLS") {
 
             root.style.setProperty('--bg-body', '#f7f4f4');
-
             root.style.setProperty('--primary-color', '#002060');
-
             root.style.setProperty('--btn-add', '#002060');
-
             root.style.setProperty('--btn-opt', '#c00000');
-
             root.style.setProperty('--btn-guided', '#002060');
 
-        }
-
-        else if (ditta === "DHL") {
+        } else if (ditta === "DHL") {
 
             root.style.setProperty('--bg-body', '#fffbe6');
-
             root.style.setProperty('--primary-color', '#d40511');
-
             root.style.setProperty('--btn-add', '#d40511');
-
             root.style.setProperty('--btn-opt', '#ffcc00');
-
             root.style.setProperty('--btn-guided', '#d40511');
-
         }
-
     }
 
 
+    /* ============================= */
+    /* AVVIO TEMA */
+    /* ============================= */
+
     window.addEventListener('DOMContentLoaded', () => {
-
         cambiaTemaDitta();
-
     });
 
 
-    /* ==========================================
-       GOOGLE MAPS / AUTOCOMPLETE
-       ========================================== */
+    /* ============================= */
+    /* GOOGLE MAPS AUTOCOMPLETE */
+    /* ============================= */
 
     function initAutocomplete() {
 
         try {
 
-            geocoder =
-                new google.maps.Geocoder();
-
+            geocoder = new google.maps.Geocoder();
 
             autocompleteComune =
                 new google.maps.places.Autocomplete(
@@ -846,7 +674,6 @@
                         }
                     }
                 );
-
 
             autocompleteInd =
                 new google.maps.places.Autocomplete(
@@ -880,7 +707,110 @@
                             place.name ||
                             document.getElementById('comune').value;
 
-
                         autocompleteInd.setBounds(
                             place.geometry.viewport
-          
+                        );
+
+                        autocompleteInd.setOptions({
+                            strictBounds: true
+                        });
+
+                        indInput.disabled = false;
+
+                        indInput.value = '';
+
+                        indInput.placeholder =
+                            "Via in " +
+                            comuneSelezionato;
+                    }
+                }
+            );
+
+
+            document
+                .getElementById('comune')
+                .addEventListener(
+                    'input',
+                    function() {
+
+                        const val =
+                            this.value.trim();
+
+                        const indInput =
+                            document.getElementById('indirizzo');
+
+
+                        if (val === "") {
+
+                            comuneSelezionato = "";
+
+                            indInput.value = "";
+
+                            indInput.disabled = true;
+
+                            indInput.placeholder =
+                                "Seleziona prima il comune...";
+
+                        } else {
+
+                            indInput.disabled = false;
+
+                            indInput.placeholder =
+                                "Inserisci via...";
+                        }
+                    }
+                );
+
+        } catch (e) {
+
+            console.error(
+                "Errore Google Maps:",
+                e
+            );
+        }
+    }
+
+
+    /* ============================= */
+    /* PULISCI CAMPO */
+    /* ============================= */
+
+    function pulisciCampo(id) {
+
+        const el =
+            document.getElementById(id);
+
+        el.value = '';
+
+
+        if (id === 'comune') {
+
+            comuneSelezionato = "";
+
+            const indInput =
+                document.getElementById('indirizzo');
+
+            indInput.value = "";
+
+            indInput.disabled = true;
+
+            indInput.placeholder =
+                "Seleziona prima il comune...";
+        }
+
+        el.focus();
+    }
+
+
+    /* ============================= */
+    /* FOTOCAMERA LDV */
+    /* ============================= */
+
+    function gestisciFotoLDV(event) {
+
+        const file =
+            event.target.files[0];
+
+        if (!file) {
+            return;
+      
