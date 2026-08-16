@@ -123,7 +123,6 @@
     let geocoder;
     let autocompleteComune;
     let autocompleteInd;
-    let giroIniziato = false;
     let comuneSelezionato = "";
 
     function apriMenu() {
@@ -178,23 +177,28 @@
     function initAutocomplete() {
         try {
             geocoder = new google.maps.Geocoder();
-            autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
             
-            autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { 
+            const inputComune = document.getElementById('comune');
+            const inputIndirizzo = document.getElementById('indirizzo');
+
+            autocompleteComune = new google.maps.places.Autocomplete(inputComune, { 
+                types: ['(cities)'], 
+                componentRestrictions: { country: 'it' } 
+            });
+            
+            autocompleteInd = new google.maps.places.Autocomplete(inputIndirizzo, { 
                 componentRestrictions: { country: 'it' },
                 fields: ['geometry', 'name', 'opening_hours', 'formatted_address']
             });
 
             autocompleteComune.addListener('place_changed', function() {
                 const place = autocompleteComune.getPlace();
-                const indInput = document.getElementById('indirizzo');
-                if (place && place.geometry && place.geometry.viewport) {
-                    comuneSelezionato = place.name || document.getElementById('comune').value;
+                if (place && place.geometry) {
+                    comuneSelezionato = place.name || inputComune.value;
                     autocompleteInd.setBounds(place.geometry.viewport);
-                    autocompleteInd.setOptions({ strictBounds: true });
-                    indInput.disabled = false;
-                    indInput.value = '';
-                    indInput.placeholder = "Via in " + comuneSelezionato;
+                    inputIndirizzo.disabled = false;
+                    inputIndirizzo.value = '';
+                    inputIndirizzo.placeholder = "Via in " + comuneSelezionato;
                     document.getElementById('orari-negozio').style.display = 'none';
                     document.getElementById('orari-negozio').innerHTML = '';
                 }
@@ -211,27 +215,22 @@
                     orariBox.innerHTML = html;
                     orariBox.style.display = 'block';
                 } else {
-                    orariBox.innerHTML = "<em>Nessun orario disponibile per questo indirizzo</em>";
-                    orariBox.style.display = 'block';
+                    orariBox.style.display = 'none';
+                    orariBox.innerHTML = '';
                 }
             });
 
-            document.getElementById('comune').addEventListener('input', function() {
-                const val = this.value.trim();
-                const indInput = document.getElementById('indirizzo');
-                if (val === "") {
+            inputComune.addEventListener('input', function() {
+                if (this.value.trim() === "") {
                     comuneSelezionato = "";
-                    indInput.value = "";
-                    indInput.disabled = true;
-                    indInput.placeholder = "Seleziona prima il comune...";
+                    inputIndirizzo.value = "";
+                    inputIndirizzo.disabled = true;
+                    inputIndirizzo.placeholder = "Seleziona prima il comune...";
                     document.getElementById('orari-negozio').style.display = 'none';
                     document.getElementById('orari-negozio').innerHTML = '';
-                } else {
-                    indInput.disabled = false;
-                    indInput.placeholder = "Inserisci via...";
                 }
             });
-        } catch (e) { console.error("Errore:", e); }
+        } catch (e) { console.error("Errore Autocomplete:", e); }
     }
 
     function pulisciCampo(id) {
@@ -393,4 +392,14 @@
 
             nonFatte.sort((a, b) => {
                 const distA = (a.lat && a.lng) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB =
+                const distB = (b.lat && b.lng) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
+                return distA - distB;
+            });
+
+            tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
+            render();
+        }, () => alert("Impossibile ottenere la posizione."));
+    }
+
+    function aggiornaPulsanteGuida() {
+    
