@@ -16,9 +16,13 @@
         .btn-opt { background: #17a2b8; color: white; }
         .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         
-        /* Barriera strumenti selezioni multiple */
-        .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
-        .btn-del-selected { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        /* Barra strumenti selezioni multiple */
+        .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
+        .batch-buttons { display: flex; gap: 4px; }
+        .btn-batch { border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; color: white; }
+        .btn-batch-done { background: #28a745; }
+        .btn-batch-highlight { background: #ffc107; color: #333; }
+        .btn-batch-del { background: #dc3545; }
         
         .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; cursor: pointer; }
         .tappa-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
@@ -46,10 +50,14 @@
     <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
     
     <div id="batch-bar" style="display:none;" class="batch-actions">
-        <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer;">
-            <input type="checkbox" id="seleziona-tutti" onclick="toggleSelezionaTutti(this)"> Seleziona tutti
+        <label style="margin:0; display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
+            <input type="checkbox" id="seleziona-tutti" onclick="toggleSelezionaTutti(this)"> Tutti
         </label>
-        <button class="btn-del-selected" onclick="eliminaSelezionate()">🗑 Elimina Selezionate</button>
+        <div class="batch-buttons">
+            <button class="btn-batch btn-batch-done" onclick="impostaStatoSelezionate(true, false)">✅ Fatta</button>
+            <button class="btn-batch btn-batch-highlight" onclick="impostaStatoSelezionate(false, true)">🟡 Evidenzia</button>
+            <button class="btn-batch btn-batch-del" onclick="eliminaSelezionate()">🗑 Elimina</button>
+        </div>
     </div>
 
     <div id="lista" style="margin-top: 15px;"></div>
@@ -60,7 +68,7 @@
     let autocompleteComune;
     let autocompleteInd;
     let giroIniziato = false;
-    let comuneSelezionato = ""; // Memorizza il comune scelto
+    let comuneSelezionato = "";
 
     function initAutocomplete() {
         try {
@@ -86,7 +94,6 @@
                 }
             });
 
-            // Intercetta se l'utente cancella o scrive a mano il comune
             document.getElementById('comune').addEventListener('input', function() {
                 if (this.value.trim() === "") {
                     comuneSelezionato = "";
@@ -118,7 +125,6 @@
             return; 
         }
         
-        // Pulisce l'indirizzo nel caso contenga già il nome del comune per evitare ripetizioni
         let viaPulita = indInput;
         if (comuneSelezionato && viaPulita.toLowerCase().includes(comuneSelezionato.toLowerCase())) {
             viaPulita = viaPulita.replace(new RegExp(comuneSelezionato, 'gi'), '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
@@ -185,6 +191,19 @@
         render();
     }
 
+    function impostaStatoSelezionate(fattaVal, cliccataVal) {
+        const selezionate = tappe.filter(t => t.selezionata);
+        if (selezionate.length === 0) {
+            alert("Seleziona almeno una tappa tramite il flag.");
+            return;
+        }
+        selezionate.forEach(t => {
+            t.fatta = fattaVal;
+            t.cliccata = fattaVal ? false : cliccataVal;
+        });
+        render();
+    }
+
     function eliminaSelezionate() {
         const daEliminare = tappe.filter(t => t.selezionata).length;
         if (daEliminare === 0) {
@@ -205,16 +224,11 @@
 
     function apriNavigatore(i) {
         if (tappe[i].fatta) return;
-        tappe[i].cliccata = true;
+        tappe[i].cliccata = true; // Evidenzia automaticamente la tappa cliccata
         render();
         const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
         window.open(url, '_blank');
-        setTimeout(() => {
-            if (confirm(`Consegna effettuata per:\n${tappe[i].indirizzo}?`)) {
-                tappe[i].fatta = true;
-                render();
-            }
-        }, 1000);
+        // Popup di conferma rimosso come richiesto
     }
 
     function calcolaDistanza(lat1, lon1, lat2, lon2) {
