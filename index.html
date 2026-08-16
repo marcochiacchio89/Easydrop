@@ -15,7 +15,13 @@
         .btn-add { background: #28a745; color: white; }
         .btn-opt { background: #17a2b8; color: white; }
         .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        
+        /* Barriera strumenti selezioni multiple */
+        .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 12px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
+        .btn-del-selected { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        
         .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; cursor: pointer; }
+        .tappa-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
         .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
         .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
         .btn-del { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
@@ -34,10 +40,18 @@
     <label>Comune:</label>
     <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune o scrivi a mano...">
+    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
+    
+    <div id="batch-bar" style="display:none;" class="batch-actions">
+        <label style="margin:0; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="seleziona-tutti" onclick="toggleSelezionaTutti(this)"> Seleziona tutti
+        </label>
+        <button class="btn-del-selected" onclick="eliminaSelezionate()">🗑 Elimina Selezionate</button>
+    </div>
+
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
 <script>
@@ -46,12 +60,12 @@
     let autocompleteComune;
     let autocompleteInd;
     let giroIniziato = false;
+    let comuneSelezionato = ""; // Memorizza il comune scelto
 
     function initAutocomplete() {
         try {
             geocoder = new google.maps.Geocoder();
             
-            // Aggiornato a 'locality' per i comuni italiani (sostituisce il vecchio '(cities)')
             autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { 
                 types: ['locality'], 
                 componentRestrictions: { country: 'it' } 
@@ -64,10 +78,19 @@
             autocompleteComune.addListener('place_changed', function() {
                 const place = autocompleteComune.getPlace();
                 if (place && place.geometry && place.geometry.viewport) {
+                    comuneSelezionato = place.name || document.getElementById('comune').value;
                     autocompleteInd.setBounds(place.geometry.viewport);
                     autocompleteInd.setOptions({ strictBounds: true });
                     document.getElementById('indirizzo').value = '';
-                    document.getElementById('indirizzo').placeholder = "Via in " + place.name;
+                    document.getElementById('indirizzo').placeholder = "Via in " + comuneSelezionato;
+                }
+            });
+
+            // Intercetta se l'utente cancella o scrive a mano il comune
+            document.getElementById('comune').addEventListener('input', function() {
+                if (this.value.trim() === "") {
+                    comuneSelezionato = "";
+                    document.getElementById('indirizzo').placeholder = "Inserisci prima il comune...";
                 }
             });
         } catch (e) {
@@ -77,39 +100,39 @@
 
     function geocodeAddress(address) {
         return new Promise((resolve) => {
-            if (!geocoder) {
-                geocoder = new google.maps.Geocoder();
-            }
+            if (!geocoder) { geocoder = new google.maps.Geocoder(); }
             geocoder.geocode({ address: address }, (results, status) => {
                 if (status === 'OK' && results && results[0] && results[0].geometry) {
                     resolve({ lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() });
-                } else { 
-                    resolve(null); 
-                }
+                } else { resolve(null); }
             });
         });
     }
 
     async function aggiungiTappa() {
-        const com = document.getElementById('comune').value.trim();
-        const ind = document.getElementById('indirizzo').value.trim();
+        let com = comuneSelezionato || document.getElementById('comune').value.trim();
+        const indInput = document.getElementById('indirizzo').value.trim();
         
-        if (!com || !ind) { 
+        if (!com || !indInput) { 
             alert("Inserisci sia il comune che l'indirizzo!"); 
             return; 
         }
         
-        const indirizzoCompleto = `${ind}, ${com}`;
+        // Pulisce l'indirizzo nel caso contenga già il nome del comune per evitare ripetizioni
+        let viaPulita = indInput;
+        if (comuneSelezionato && viaPulita.toLowerCase().includes(comuneSelezionato.toLowerCase())) {
+            viaPulita = viaPulita.replace(new RegExp(comuneSelezionato, 'gi'), '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
+        }
+
+        const indirizzoCompleto = `${viaPulita}, ${com}`;
         let lat = null;
         let lng = null;
 
-        // Prova a recuperare le coordinate dall'autocomplete dell'indirizzo se selezionato
         const place = autocompleteInd.getPlace();
         if (place && place.geometry && place.geometry.location) {
             lat = place.geometry.location.lat();
             lng = place.geometry.location.lng();
         } else {
-            // Fallback: se inserito manualmente senza tendina, geocodifica al volo
             const coords = await geocodeAddress(indirizzoCompleto);
             if (coords) {
                 lat = coords.lat;
@@ -117,24 +140,62 @@
             }
         }
 
-        tappe.push({ indirizzo: indirizzoCompleto, cliccata: false, fatta: false, lat: lat, lng: lng });
+        tappe.push({ indirizzo: indirizzoCompleto, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
         document.getElementById('indirizzo').value = '';
         render();
     }
 
     function render() {
         const list = document.getElementById('lista');
+        const batchBar = document.getElementById('batch-bar');
         list.innerHTML = '';
+        
+        if (tappe.length > 0) {
+            batchBar.style.display = 'flex';
+        } else {
+            batchBar.style.display = 'none';
+            document.getElementById('seleziona-tutti').checked = false;
+        }
+
         tappe.forEach((t, i) => {
             let classeStato = '';
             if (t.fatta) classeStato = 'fatta';
             else if (t.cliccata) classeStato = 'evidenziata';
+            
             list.innerHTML += `<div class="tappa ${classeStato}" onclick="apriNavigatore(${i})">
-                    <span><strong>${i + 1}.</strong> ${t.indirizzo}</span>
+                    <div class="tappa-left">
+                        <input type="checkbox" ${t.selezionata ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelezionaTappa(${i}, this)">
+                        <span><strong>${i + 1}.</strong> ${t.indirizzo}</span>
+                    </div>
                     <button class="btn-del" onclick="event.stopPropagation(); rimuoviTappa(${i})">X</button>
                 </div>`;
         });
         aggiornaPulsanteGuida();
+    }
+
+    function toggleSelezionaTappa(i, checkbox) {
+        tappe[i].selezionata = checkbox.checked;
+        const tuttiSelezionati = tappe.length > 0 && tappe.every(t => t.selezionata);
+        document.getElementById('seleziona-tutti').checked = tuttiSelezionati;
+    }
+
+    function toggleSelezionaTutti(checkbox) {
+        const stato = checkbox.checked;
+        tappe.forEach(t => t.selezionata = stato);
+        render();
+    }
+
+    function eliminaSelezionate() {
+        const daEliminare = tappe.filter(t => t.selezionata).length;
+        if (daEliminare === 0) {
+            alert("Seleziona almeno una tappa da eliminare.");
+            return;
+        }
+        if (confirm(`Vuoi davvero eliminare ${daEliminare} tappe selezionate?`)) {
+            tappe = tappe.filter(t => !t.selezionata);
+            document.getElementById('seleziona-tutti').checked = false;
+            render();
+        }
     }
 
     function rimuoviTappa(i) { 
