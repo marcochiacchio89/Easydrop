@@ -13,6 +13,8 @@
         button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 16px; }
         .btn-add { background: #28a745; color: white; }
         .btn-save { background: #0056b3; color: white; margin-top: 15px; }
+        .quick-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .quick-btns button { width: auto; flex: 1; padding: 8px; font-size: 12px; background: #e9ecef; color: #333; border: 1px solid #ced4da; margin-top: 0; }
         ul { padding-left: 0; list-style: none; margin-top: 15px; }
         li { background: #f8f9fa; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
         .map-link { background: #ffc107; color: #000; padding: 6px 10px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; white-space: nowrap; margin-left: 10px; }
@@ -33,31 +35,17 @@
     </select>
 
     <label for="comune">Comune di lavoro:</label>
-    <input type="text" id="comune" list="comuni-list" placeholder="Digita comune...">
-    <datalist id="comuni-list">
-        <option value="Sant'Arpino (CE)">
-        <option value="Succivo (CE)">
-        <option value="Orta di Atella (CE)">
-        <option value="Gricignano di Aversa (CE)">
-        <option value="Aversa (CE)">
-        <option value="Cesa (CE)">
-        <option value="Frattaminore (NA)">
-        <option value="Frattamaggiore (NA)">
-        <option value="Grumo Nevano (NA)">
-        <option value="Sant'Antimo (NA)">
-        <option value="Marcianise (CE)">
-    </datalist>
+    <input type="text" id="comune" placeholder="Es. Sant'Arpino (CE)">
+    <div class="quick-btns">
+        <button type="button" onclick="impostaComune('Sant\'Arpino (CE)')">Sant'Arpino</button>
+        <button type="button" onclick="impostaComune('Succivo (CE)')">Succivo</button>
+        <button type="button" onclick="impostaComune('Orta di Atella (CE)')">Orta Atella</button>
+        <button type="button" onclick="impostaComune('Aversa (CE)')">Aversa</button>
+        <button type="button" onclick="impostaComune('Marcianise (CE)')">Marcianise</button>
+    </div>
 
     <label for="indirizzo_input">Aggiungi Indirizzo:</label>
-    <input type="text" id="indirizzo_input" list="strade-list" placeholder="Digita via...">
-    <datalist id="strade-list">
-        <option value="Via Fratelli Cervi">
-        <option value="Via Roma">
-        <option value="Via Diaz">
-        <option value="Corso Umberto I">
-        <option value="Via Matteotti">
-        <option value="Via Garibaldi">
-    </datalist>
+    <input type="text" id="indirizzo_input" placeholder="Es. Via Roma 1">
     
     <button class="btn-add" onclick="aggiungi()">+ Aggiungi Indirizzo</button>
     
@@ -70,6 +58,10 @@
     const SUPABASE_URL = 'https://jfhejqhxtvhgfrjdfleq.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh';
     let tappe = [];
+
+    function impostaComune(nomeComune) {
+        document.getElementById('comune').value = nomeComune;
+    }
 
     function aggiungi() {
         const ind = document.getElementById('indirizzo_input');
@@ -110,6 +102,9 @@
             return;
         }
 
+        // Uniamo le tappe in un unico testo separato da trattini per azzerare qualsiasi errore di formato sul database
+        const indirizziTesto = tappe.join(" | ");
+
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/Consegne`, {
                 method: 'POST',
@@ -122,7 +117,7 @@
                 body: JSON.stringify({
                     ditta: ditta,
                     comune: comune,
-                    indirizzi: tappe
+                    indirizzi: indirizziTesto
                 })
             });
 
