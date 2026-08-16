@@ -7,17 +7,24 @@
     <style>
         body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #0056b3; text-align: center; }
+        h2 { color: #0056b3; text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-top: 15px; }
-        select, input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: #0056b3; color: white; border: none; padding: 14px; margin-top: 20px; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        button:active { background: #004085; }
+        select, input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        .btn-aggiungi { background: #28a745; margin-top: 10px; }
+        .btn-ottimizza { background: #0056b3; margin-top: 20px; }
+        button { width: 100%; color: white; border: none; padding: 14px; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:active { opacity: 0.8; }
+        ul { padding-left: 20px; margin-top: 10px; }
+        li { margin-bottom: 5px; font-size: 15px; }
+        .lista-box { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 10px; border: 1px solid #e9ecef; min-height: 50px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>EasyDrop 📦</h2>
+    <div class="subtitle">Gestione Giro Corriere</div>
     
     <label for="ditta">Seleziona la tua Ditta:</label>
     <select id="ditta">
@@ -30,30 +37,74 @@
         <option value="FedEx">FedEx</option>
     </select>
 
-    <label for="comune">Comune:</label>
+    <label for="comune">Comune di Lavoro:</label>
     <input type="text" id="comune" placeholder="Es. Sant'Arpino">
 
-    <label for="cap">CAP:</label>
-    <input type="text" id="cap" placeholder="Es. 81030">
+    <label for="nuovo_indirizzo">Aggiungi Consegna Singola:</label>
+    <input type="text" id="nuovo_indirizzo" placeholder="Es. Via Roma 15">
+    
+    <button class="btn-aggiungi" onclick="aggiungiConsegna()">+ Aggiungi Indirizzo</button>
 
-    <label for="consegne">Incolla Indirizzi Consegne:</label>
-    <textarea id="consegne" rows="5" placeholder="Inserisci le consegne della giornata..."></textarea>
+    <label>Tappe Inserite (<span id="totale_tappe">0</span>):</label>
+    <div class="lista-box">
+        <ul id="lista_tappe">
+            <li style="color: #888; list-style: none;">Nessuna consegna inserita</li>
+        </ul>
+    </div>
 
-    <button onclick="avviaGiro()">Ottimizza Giro</button>
+    <button class="btn-ottimizza" onclick="avviaGiro()">🚀 Ottimizza Giro</button>
 </div>
 
 <script>
+    let tappeArray = [];
+
+    function aggiungiConsegna() {
+        const inputIndirizzo = document.getElementById('nuovo_indirizzo');
+        const indirizzo = inputIndirizzo.value.trim();
+
+        if(!indirizzo) {
+            alert("Scrivi prima un indirizzo valido!");
+            return;
+        }
+
+        // Aggiunge l'indirizzo alla lista locale
+        tappeArray.push(indirizzo);
+        aggiornaListaGrafica();
+        
+        // Pulisce il campo di testo per la prossima consegna
+        inputIndirizzo.value = '';
+        inputIndirizzo.focus();
+    }
+
+    function aggiornaListaGrafica() {
+        const listaUl = document.getElementById('lista_tappe');
+        const contatore = document.getElementById('totale_tappe');
+        
+        contatore.innerText = tappeArray.length;
+
+        if (tappeArray.length === 0) {
+            listaUl.innerHTML = '<li style="color: #888; list-style: none;">Nessuna consegna inserita</li>';
+            return;
+        }
+
+        listaUl.innerHTML = '';
+        tappeArray.forEach((tappa, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<b>${index + 1}.</b> ${tappa} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa)}" target="_blank" style="font-size:13px; margin-left:10px; color:#0056b3;">🗺️ Mappa</a>`;
+            listaUl.appendChild(li);
+        });
+    }
+
     function avviaGiro() {
         const ditta = document.getElementById('ditta').value;
         const comune = document.getElementById('comune').value;
-        const cap = document.getElementById('cap').value;
-        
-        if(!comune || !cap) {
-            alert("Inserisci Comune e CAP per verificare i ritiri fissi della zona!");
+
+        if(tappeArray.length === 0) {
+            alert("Inserisci almeno una consegna prima di ottimizzare il giro!");
             return;
         }
-        
-        alert(`Connessione al database per ${ditta} a ${comune} (${cap})... Caricamento alert e ritiri fissi.`);
+
+        alert(`Giro pronto per ${ditta} a ${comune}! Totale fermate: ${tappeArray.length}. Invio al server in corso...`);
     }
 </script>
 
