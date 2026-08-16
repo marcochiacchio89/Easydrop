@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.4</title>
+    <title>EasyDrop PRO v2.5</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
@@ -48,7 +48,7 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.4</h2>
+    <h2>EasyDrop PRO 📦 v2.5</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -168,20 +168,24 @@
                     document.getElementById('indirizzo').value = p.structured_formatting.main_text;
                     suggerimentiBox.style.display = 'none';
                     
-                    placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
-                        if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
-                            if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
-                                tempIsBusiness = true;
-                                if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
-                                    let todayIndex = (new Date().getDay() + 6) % 7; 
-                                    let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
-                                    if(stringaOggi) {
-                                        tempOrari = stringaOggi.split(': ')[1];
+                    try {
+                        placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
+                            if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
+                                if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
+                                    tempIsBusiness = true;
+                                    if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
+                                        let todayIndex = (new Date().getDay() + 6) % 7; 
+                                        let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
+                                        if(stringaOggi) {
+                                            tempOrari = stringaOggi.split(': ')[1];
+                                        }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
+                    } catch (err) {
+                        console.log("Dettagli negozio non disponibili");
+                    }
                 };
                 suggerimentiBox.appendChild(div);
             });
@@ -362,7 +366,6 @@
         }
     }
 
-    // --- NUOVO ALGORITMO A CATENA PER "MAPPA GPS" ---
     async function ottimizzaGiro() {
         if (tappe.length === 0) return alert("Aggiungi almeno una via!");
         if (!navigator.geolocation) return alert("GPS non supportato.");
@@ -392,7 +395,6 @@
                 let nextStop = tappeDaFare.splice(nearestIndex, 1)[0];
                 percorsoOttimizzato.push(nextStop);
                 
-                // Il nuovo punto di partenza diventa la tappa appena calcolata
                 if(nextStop.lat) {
                     currentLat = nextStop.lat;
                     currentLng = nextStop.lng;
@@ -406,7 +408,6 @@
         }, () => alert("Attiva il GPS!"));
     }
 
-    // --- NUOVO ALGORITMO A CATENA PER "PRECEDENZA NEGOZI" ---
     async function ottimizzaNegozi() {
         if (tappe.length === 0) return alert("Aggiungi almeno una via!");
         if (!navigator.geolocation) return alert("GPS non supportato.");
@@ -422,7 +423,6 @@
             let currentLat = pos.coords.latitude;
             let currentLng = pos.coords.longitude;
 
-            // 1. Collega tutti i negozi a catena
             while(tappeNegozi.length > 0) {
                 let nearestIndex = 0; let minDist = 99999;
                 for(let i = 0; i < tappeNegozi.length; i++) {
@@ -434,11 +434,12 @@
                 if(nextStop.lat) { currentLat = nextStop.lat; currentLng = nextStop.lng; }
             }
 
-            // 2. Continua la catena con i privati, ripartendo dalle coordinate dell'ultimo negozio consegnato
             while(tappePrivati.length > 0) {
                 let nearestIndex = 0; let minDist = 99999;
                 for(let i = 0; i < tappePrivati.length; i++) {
                     let d = tappePrivati[i].lat ? calcolaDistanza(currentLat, currentLng, tappePrivati[i].lat, tappePrivati[i].lng) : 99999;
                     if(d < minDist) { minDist = d; nearestIndex = i; }
                 }
-              
+                let nextStop = tappePrivati.splice(nearestIndex, 1)[0];
+                percorsoOttimizzato.push(nextStop);
+                if(nextStop.lat) { cur
