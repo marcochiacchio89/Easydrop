@@ -51,6 +51,9 @@
             return;
         }
 
+        // Trasformiamo l'array in una stringa separata da virgole per evitare errori di formato
+        const indirizziStringa = tappe.join(" | ");
+
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/Consegne`, {
                 method: 'POST',
@@ -63,7 +66,7 @@
                 body: JSON.stringify({
                     ditta: ditta,
                     comune: comune,
-                    indirizzi: tappe
+                    indirizzi: indirizziStringa
                 })
             });
 
