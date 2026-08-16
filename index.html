@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.6</title>
+    <title>EasyDrop PRO v2.2</title>
+    <!-- Caricamento Google Maps e Places API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
@@ -11,44 +12,38 @@
         h2 { text-align: center; color: #333; margin-top: 0; }
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
         
+        /* Contenitori Input */
         .input-group { position: relative; display: flex; align-items: center; }
         .input-group input { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         .btn-clear { position: absolute; right: 10px; background: #e0e0e0; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
         
+        /* Menu a tendina personalizzato per le Vie */
         .suggerimenti-box { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 0 0 6px 6px; z-index: 1000; max-height: 220px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
         .suggerimento-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; color: #333; }
         .suggerimento-item:hover { background: #f0f8ff; }
         .suggerimento-item:last-child { border-bottom: none; }
 
         select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-opt { background: #17a2b8; color: white; }
+        .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         
-        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; text-align: center; color: white; }
-        .btn-add { background: #28a745; width: 100%; margin-top: 10px; font-size: 15px; padding: 14px; }
-        .btn-opt { background: #17a2b8; }
-        .btn-store { background: #e83e8c; }
-        .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; width: 100%; box-shadow: 0 3px 6px rgba(0,0,0,0.2); margin-top: 15px; padding: 14px; }
-        
-        .master-checkbox-container { background: #e9ecef; padding: 10px; border-radius: 6px; margin-top: 15px; display: flex; align-items: center; font-weight: bold; font-size: 14px; cursor: pointer; }
-        .master-checkbox-container input { transform: scale(1.4); margin-right: 10px; cursor: pointer; accent-color: #007bff; }
-
-        .tappa { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; gap: 6px; }
+        /* Stile lista tappe */
+        .tappa { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; gap: 8px; }
         .tappa-info { flex-grow: 1; cursor: pointer; }
         .nota-badge { font-size: 12px; color: #666; font-style: italic; margin-top: 3px; display: block; }
-        .orari-badge { font-size: 12px; color: #dc3545; font-weight: bold; margin-top: 3px; display: block; background: #ffebeb; padding: 2px 4px; border-radius: 4px; display: inline-block;}
         .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
-        .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; opacity: 0.7; }
+        .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
         
-        .btn-icon { background: #6c757d; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
-        .btn-del { background: #dc3545; }
-        .btn-move { background: #007bff; }
-        .btn-move:disabled { background: #b8c4d1; cursor: not-allowed; }
-        .checkbox-fatta { transform: scale(1.5); margin-right: 6px; cursor: pointer; accent-color: #28a745; }
+        .btn-action { background: #6c757d; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-del { background: #dc3545; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .checkbox-fatta { transform: scale(1.4); margin-right: 6px; cursor: pointer; accent-color: #28a745; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.6</h2>
+    <h2>EasyDrop PRO 📦 v2.2</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -64,10 +59,12 @@
         <button class="btn-clear" onclick="pulisciCampo('comune')">✕</button>
     </div>
 
-    <label>Indirizzo (o nome negozio):</label>
+    <label>Indirizzo:</label>
     <div class="input-group">
+        <!-- Input modificato per attivare la ricerca vie personalizzata -->
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." autocomplete="off" oninput="cercaVie()">
         <button class="btn-clear" onclick="pulisciCampo('indirizzo')">✕</button>
+        <!-- Box invisibile che conterrà i suggerimenti bloccati al comune -->
         <div id="indirizzo-suggerimenti" class="suggerimenti-box"></div>
     </div>
 
@@ -78,18 +75,8 @@
     </div>
 
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
-    
-    <div class="btn-row">
-        <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Mappa GPS</button>
-        <button class="btn btn-store" onclick="ottimizzaNegozi()">🏪 Precedenza Negozi</button>
-    </div>
-
+    <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
-
-    <div class="master-checkbox-container" id="master-toggle-container" style="display: none;">
-        <input type="checkbox" id="master-checkbox" onchange="toggleTutte(this.checked)">
-        <label for="master-checkbox" style="margin:0; cursor:pointer;">Seleziona / Deseleziona Tutte</label>
-    </div>
 
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
@@ -98,17 +85,12 @@
     let tappe = [];
     let geocoder;
     let autocompleteComune;
-    let autocompleteService;
-    let placesService;
+    let autocompleteService; // Nuovo servizio di ricerca manuale
     let giroIniziato = false;
-    
-    let tempIsBusiness = false;
-    let tempOrari = "";
 
     function initAutocomplete() {
         geocoder = new google.maps.Geocoder();
         autocompleteService = new google.maps.places.AutocompleteService();
-        placesService = new google.maps.places.PlacesService(document.createElement('div'));
         
         autocompleteComune = new google.maps.places.Autocomplete(
             document.getElementById('comune'), 
@@ -119,13 +101,14 @@
             const place = autocompleteComune.getPlace();
             if (place && place.name) {
                 document.getElementById('indirizzo').value = '';
-                document.getElementById('indirizzo').placeholder = "Cerca via o negozio a " + place.name + "...";
+                document.getElementById('indirizzo').placeholder = "Cerca via a " + place.name + "...";
                 document.getElementById('indirizzo-suggerimenti').style.display = 'none';
             }
         });
 
+        // Nascondi il menu delle vie se l'utente clicca fuori
         document.addEventListener('click', function(event) {
-            if (event.target.id !== 'indirizzo' && !event.target.closest('#indirizzo-suggerimenti')) {
+            if (event.target.id !== 'indirizzo') {
                 document.getElementById('indirizzo-suggerimenti').style.display = 'none';
             }
         });
@@ -134,19 +117,19 @@
         render();
     }
 
+    // 1. RICERCA VIE RIGIDAMENTE BLOCCATA SUL COMUNE
     function cercaVie() {
         const inputVia = document.getElementById('indirizzo').value;
         const nomeComune = document.getElementById('comune').value;
         const suggerimentiBox = document.getElementById('indirizzo-suggerimenti');
 
-        tempIsBusiness = false;
-        tempOrari = "";
-
+        // Mostra i suggerimenti solo se l'utente ha digitato almeno 2 lettere
         if (inputVia.length < 2 || !nomeComune) {
             suggerimentiBox.style.display = 'none';
             return;
         }
 
+        // Il trucco: costringiamo Google a cercare "La Via Inserita + Il Comune"
         const queryForte = inputVia + ", " + nomeComune;
 
         autocompleteService.getPlacePredictions({
@@ -162,32 +145,13 @@
             predictions.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'suggerimento-item';
-                div.innerHTML = p.description;
+                div.innerHTML = p.description; // Mostra l'indirizzo intero suggerito
                 
+                // Seleziona la via cliccata
                 div.onclick = function() {
+                    // Inserisce nel campo Indirizzo solo la via senza ripetere il comune (es. "Via Roma, 10")
                     document.getElementById('indirizzo').value = p.structured_formatting.main_text;
                     suggerimentiBox.style.display = 'none';
-                    
-                    if (placesService && p.place_id) {
-                        try {
-                            placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
-                                if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
-                                    if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
-                                        tempIsBusiness = true;
-                                        if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
-                                            let todayIndex = (new Date().getDay() + 6) % 7; 
-                                            let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
-                                            if(stringaOggi) {
-                                                tempOrari = stringaOggi.split(': ')[1];
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                        } catch (e) {
-                            console.log("Dettagli non disponibili");
-                        }
-                    }
                 };
                 suggerimentiBox.appendChild(div);
             });
@@ -200,18 +164,19 @@
         if (id === 'comune') {
             document.getElementById('indirizzo').value = '';
             document.getElementById('indirizzo').placeholder = "Seleziona prima il comune...";
+            document.getElementById('indirizzo-suggerimenti').style.display = 'none';
         }
-        document.getElementById('indirizzo-suggerimenti').style.display = 'none';
-        tempIsBusiness = false;
-        tempOrari = "";
+        if (id === 'indirizzo') {
+            document.getElementById('indirizzo-suggerimenti').style.display = 'none';
+        }
     }
 
     function salvaInLocalStorage() {
-        localStorage.setItem('easydrop_tappe_v4', JSON.stringify(tappe));
+        localStorage.setItem('easydrop_tappe_v2', JSON.stringify(tappe));
     }
 
     function caricaDaLocalStorage() {
-        const dati = localStorage.getItem('easydrop_tappe_v4');
+        const dati = localStorage.getItem('easydrop_tappe_v2');
         if (dati) {
             try { tappe = JSON.parse(dati); } catch (e) { tappe = []; }
         }
@@ -223,7 +188,7 @@
         const note = document.getElementById('note').value.trim();
 
         if (!com || !ind) {
-            alert("Inserisci sia il comune che l'indirizzo/negozio!");
+            alert("Inserisci sia il comune che l'indirizzo!");
             return;
         }
 
@@ -234,17 +199,13 @@
             note: note,
             cliccata: false,
             fatta: false,
-            lat: null,
-            lng: null,
-            isBusiness: tempIsBusiness,
-            orari: tempOrari
+            lat: null, // Si calcolerà da solo tramite Geocode in fase di ottimizzazione
+            lng: null
         });
         
         document.getElementById('indirizzo').value = '';
         document.getElementById('note').value = '';
-        tempIsBusiness = false;
-        tempOrari = "";
-        
+        document.getElementById('indirizzo-suggerimenti').style.display = 'none';
         salvaInLocalStorage();
         render();
     }
@@ -255,32 +216,25 @@
         render();
     }
 
-    function toggleTutte(stato) {
-        tappe.forEach(t => t.fatta = stato);
-        salvaInLocalStorage();
-        render();
-    }
+    function modificaTappa(i) {
+        const nuovoIndirizzo = prompt("Modifica Indirizzo e Comune:", tappe[i].indirizzo);
+        if (nuovoIndirizzo === null) return;
+        
+        const nuoveNote = prompt("Modifica Note:", tappe[i].note || "");
+        if (nuoveNote === null) return;
 
-    function spostaTappa(index, direzione) {
-        if (index + direzione < 0 || index + direzione >= tappe.length) return;
-        let temp = tappe[index];
-        tappe[index] = tappe[index + direzione];
-        tappe[index + direzione] = temp;
+        tappe[i].indirizzo = nuovoIndirizzo.trim();
+        tappe[i].note = nuoveNote.trim();
+        tappe[i].lat = null;
+        tappe[i].lng = null;
+
         salvaInLocalStorage();
         render();
     }
 
     function render() {
         const list = document.getElementById('lista');
-        const masterToggle = document.getElementById('master-toggle-container');
         list.innerHTML = '';
-
-        if (tappe.length > 0) {
-            masterToggle.style.display = 'flex';
-            document.getElementById('master-checkbox').checked = tappe.every(t => t.fatta);
-        } else {
-            masterToggle.style.display = 'none';
-        }
 
         tappe.forEach((t, i) => {
             let classeStato = '';
@@ -289,15 +243,13 @@
 
             list.innerHTML += `
                 <div class="tappa ${classeStato}">
-                    <input type="checkbox" class="checkbox-fatta" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})">
+                    <input type="checkbox" class="checkbox-fatta" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})" title="Segna come fatta/non fatta">
                     <div class="tappa-info" onclick="apriNavigatore(${i})">
                         <strong>${i + 1}.</strong> ${t.indirizzo}
-                        ${t.isBusiness ? `<span class="orari-badge">🏪 Orari oggi: ${t.orari ? t.orari : 'Non specificati'}</span>` : ''}
                         ${t.note ? `<span class="nota-badge">📝 ${t.note}</span>` : ''}
                     </div>
-                    <button class="btn-icon btn-move" onclick="spostaTappa(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Sposta Su">🔼</button>
-                    <button class="btn-icon btn-move" onclick="spostaTappa(${i}, 1)" ${i === tappe.length - 1 ? 'disabled' : ''} title="Sposta Giù">🔽</button>
-                    <button class="btn-icon btn-del" onclick="rimuoviTappa(${i})" title="Elimina">✕</button>
+                    <button class="btn-action" onclick="modificaTappa(${i})" title="Modifica">✏️</button>
+                    <button class="btn-del" onclick="rimuoviTappa(${i})" title="Elimina">✕</button>
                 </div>`;
         });
 
@@ -312,11 +264,14 @@
 
     function apriNavigatore(i) {
         if (tappe[i].fatta) return;
+
         tappe[i].cliccata = true;
         salvaInLocalStorage();
         render();
+
         const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
         window.open(url, '_blank');
+
         setTimeout(() => {
             if (confirm(`Consegna effettuata per:\n${tappe[i].indirizzo}?`)) {
                 tappe[i].fatta = true;
@@ -330,19 +285,20 @@
         const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     function geocodeAddress(address) {
         return new Promise((resolve) => {
-            if (!geocoder) {
-                resolve(null);
-                return;
-            }
             geocoder.geocode({ address: address }, (results, status) => {
-                if (status === 'OK' && results && results[0]) {
-                    resolve({ lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() });
+                if (status === 'OK' && results && results[0] && results[0].geometry) {
+                    resolve({
+                        lat: results[0].geometry.location.lat(),
+                        lng: results[0].geometry.location.lng()
+                    });
                 } else {
                     resolve(null);
                 }
@@ -350,96 +306,79 @@
         });
     }
 
-    async function assegnaCoordinateMancanti() {
-        for (let t of tappe) {
-            if (t.lat === null || t.lng === null) {
-                const coords = await geocodeAddress(t.indirizzo);
-                if (coords) { 
-                    t.lat = coords.lat; 
-                    t.lng = coords.lng; 
-                }
-            }
-        }
-    }
-
     async function ottimizzaGiro() {
-        if (tappe.length === 0) return alert("Aggiungi almeno una via!");
-        if (!navigator.geolocation) return alert("GPS non supportato.");
+        if (tappe.length === 0) {
+            alert("Aggiungi almeno una via!");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert("GPS non supportato.");
+            return;
+        }
 
         navigator.geolocation.getCurrentPosition(async (pos) => {
-            await assegnaCoordinateMancanti();
-            
-            let tappeDaFare = tappe.filter(t => !t.fatta);
-            let tappeFatte = tappe.filter(t => t.fatta);
-            
-            let percorsoOttimizzato = [];
-            let currentLat = pos.coords.latitude;
-            let currentLng = pos.coords.longitude;
-            
-            while(tappeDaFare.length > 0) {
-                let nearestIndex = 0;
-                let minDist = 99999;
-                
-                for(let i = 0; i < tappeDaFare.length; i++) {
-                    let d = tappeDaFare[i].lat ? calcolaDistanza(currentLat, currentLng, tappeDaFare[i].lat, tappeDaFare[i].lng) : 99999;
-                    if(d < minDist) {
-                        minDist = d;
-                        nearestIndex = i;
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+
+            for (let t of tappe) {
+                if (t.lat === null || t.lng === null) {
+                    const coords = await geocodeAddress(t.indirizzo);
+                    if (coords) {
+                        t.lat = coords.lat;
+                        t.lng = coords.lng;
                     }
                 }
-                
-                let nextStop = tappeDaFare.splice(nearestIndex, 1)[0];
-                percorsoOttimizzato.push(nextStop);
-                
-                if(nextStop.lat) {
-                    currentLat = nextStop.lat;
-                    currentLng = nextStop.lng;
-                }
             }
-            
-            tappe = percorsoOttimizzato.concat(tappeFatte);
-            giroIniziato = false; 
-            salvaInLocalStorage(); 
+
+            tappe.sort((a, b) => {
+                if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
+                const distA = (a.lat !== null && a.lng !== null) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
+                const distB = (b.lat !== null && b.lng !== null) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
+                return distA - distB;
+            });
+
+            giroIniziato = false;
+            salvaInLocalStorage();
             render();
-            alert("Mappa GPS ricalcolata in successione logica!");
-        }, () => alert("Attiva il GPS per ottimizzare il giro!"));
+            alert("Giro ottimizzato dalla tua posizione!");
+        }, (err) => {
+            alert("Attiva il GPS!");
+        });
     }
 
-    async function ottimizzaNegozi() {
-        if (tappe.length === 0) return alert("Aggiungi almeno una via!");
-        if (!navigator.geolocation) return alert("GPS non supportato.");
+    function avanziaGiro() {
+        const prossimoIndex = tappe.findIndex(t => !t.fatta);
+        if (prossimoIndex === -1) {
+            alert("Tutto consegnato!");
+            return;
+        }
+        giroIniziato = true;
+        apriNavigatore(prossimoIndex);
+    }
 
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            await assegnaCoordinateMancanti();
+    function aggiornaPulsanteGuida() {
+        const btnGuided = document.getElementById('btn-guided');
+        if (tappe.length === 0) {
+            btnGuided.style.display = 'none';
+            return;
+        }
 
-            let tappeNegozi = tappe.filter(t => !t.fatta && t.isBusiness);
-            let tappePrivati = tappe.filter(t => !t.fatta && !t.isBusiness);
-            let tappeFatte = tappe.filter(t => t.fatta);
-
-            let percorsoOttimizzato = [];
-            let currentLat = pos.coords.latitude;
-            let currentLng = pos.coords.longitude;
-
-            while(tappeNegozi.length > 0) {
-                let nearestIndex = 0; let minDist = 99999;
-                for(let i = 0; i < tappeNegozi.length; i++) {
-                    let d = tappeNegozi[i].lat ? calcolaDistanza(currentLat, currentLng, tappeNegozi[i].lat, tappeNegozi[i].lng) : 99999;
-                    if(d < minDist) { minDist = d; nearestIndex = i; }
-                }
-                let nextStop = tappeNegozi.splice(nearestIndex, 1)[0];
-                percorsoOttimizzato.push(nextStop);
-                if(nextStop.lat) { currentLat = nextStop.lat; currentLng = nextStop.lng; }
-            }
-
-            while(tappePrivati.length > 0) {
-                let nearestIndex = 0; let minDist = 99999;
-                for(let i = 0; i < tappePrivati.length; i++) {
-                    let d = tappePrivati[i].lat ? calcolaDistanza(currentLat, currentLng, tappePrivati[i].lat, tappePrivati[i].lng) : 99999;
-                    if(d < minDist) { minDist = d; nearestIndex = i; }
-                }
-                let nextStop = tappePrivati.splice(nearestIndex, 1)[0];
-                percorsoOttimizzato.push(nextStop);
-                if(nextStop.lat) { currentLat = nextStop.lat; currentLng = nextStop.lng; }
-            }
-
-       
+        const prossimoIndex = tappe.findIndex(t => !t.fatta);
+        if (prossimoIndex === -1) {
+            btnGuided.style.display = 'block';
+            btnGuided.innerText = "🎉 GIRO COMPLETATO";
+            btnGuided.style.background = "#28a745";
+        } else if (giroIniziato) {
+            btnGuided.style.display = 'block';
+            btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`;
+            btnGuided.style.background = "#ff9800";
+        } else {
+            btnGuided.style.display = 'block';
+            btnGuided.innerText = "🚀 INIZIA GIRO";
+            btnGuided.style.background = "#ff9800";
+        }
+    }
+</script>
+</body>
+</html>
