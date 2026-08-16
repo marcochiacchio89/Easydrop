@@ -16,8 +16,10 @@
         .quick-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
         .quick-btns button { width: auto; flex: 1; padding: 8px; font-size: 12px; background: #e9ecef; color: #333; border: 1px solid #ced4da; margin-top: 0; }
         ul { padding-left: 0; list-style: none; margin-top: 15px; }
-        li { background: #f8f9fa; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
-        .map-link { background: #ffc107; color: #000; padding: 6px 10px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; white-space: nowrap; margin-left: 10px; }
+        li { background: #f8f9fa; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .actions { display: flex; gap: 5px; align-items: center; }
+        .map-link { background: #ffc107; color: #000; padding: 6px 8px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .btn-delete { background: #dc3545; color: white; padding: 6px 8px; border-radius: 4px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; width: auto; margin-top: 0; }
     </style>
 </head>
 <body>
@@ -81,6 +83,11 @@
         }
     }
 
+    function rimuoviTappa(index) {
+        tappe.splice(index, 1);
+        aggiornaListaVisuale();
+    }
+
     function aggiornaListaVisuale() {
         const lista = document.getElementById('lista');
         lista.innerHTML = '';
@@ -88,7 +95,10 @@
             const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa)}`;
             lista.innerHTML += `<li>
                 <span>${index + 1}. ${tappa}</span>
-                <a href="${mapUrl}" target="_blank" class="map-link">📍 Mappa</a>
+                <div class="actions">
+                    <a href="${mapUrl}" target="_blank" class="map-link">📍 Mappa</a>
+                    <button type="button" class="btn-delete" onclick="rimuoviTappa(${index})">❌ Elimina</button>
+                </div>
             </li>`;
         });
     }
@@ -102,7 +112,6 @@
             return;
         }
 
-        // Uniamo le tappe in un unico testo separato da trattini per azzerare qualsiasi errore di formato sul database
         const indirizziTesto = tappe.join(" | ");
 
         try {
