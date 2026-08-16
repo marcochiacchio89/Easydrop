@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyDrop PRO V 3.5</title>
+    <!-- Mantenuta esattamente la callback originale per Google Maps -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         :root {
@@ -38,10 +39,13 @@
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
 
+        /* Input file nascosto per la fotocamera */
+        .hidden-file { opacity: 0; width: 0.1px; height: 0.1px; position: absolute; z-index: -1; }
+
         /* Sezione Fotocamera IA sotto Indirizzo */
         .camera-container { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px 0; background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border: 1px solid #e0e0e0; }
         .btn-camera { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .camera-text { font-size: 13px; font-weight: 600; color: #555; }
+        .camera-text { font-size: 13px; font-weight: 600; color: #555; margin: 0; }
 
         /* Overlay Scansione IA */
         .ocr-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 2000; }
@@ -109,11 +113,11 @@
         <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
     </div>
 
-    <!-- Opzione Scatto Foto LDV -->
+    <!-- Sezione Fotocamera IA sotto Indirizzo -->
     <div class="camera-container">
-        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="gestisciFotoLDV(event)">
-        <button type="button" class="btn-camera" onclick="document.getElementById('cameraInput').click()">📷</button>
-        <span class="camera-text">Usa la fotocamera per identificare l indirizzo</span>
+        <input type="file" id="cameraInput" class="hidden-file" accept="image/*" capture="environment" onchange="gestisciFotoLDV(event)">
+        <label for="cameraInput" class="btn-camera" title="Scatta foto LDV">📷</label>
+        <span class="camera-text">Usa la fotocamera per identificare l'indirizzo</span>
     </div>
 
     <label>Note (facoltativo):</label>
@@ -155,7 +159,6 @@
     let geocoder;
     let autocompleteComune;
     let autocompleteInd;
-    let giroIniziato = false;
     let comuneSelezionato = "";
 
     function apriMenu() {
@@ -381,9 +384,4 @@
         if (tappe[i].fatta) return;
         tappe[i].cliccata = true;
         render();
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
-        window.open(url, '_blank');
-    }
-
-    function calcolaDistanza(lat1, lon1, lat2, lon2) {
-   
+        const url = `https://www.google.com/maps/
