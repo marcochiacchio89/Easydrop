@@ -37,11 +37,27 @@
         .input-container { position: relative; }
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
+        
+        /* Sezione Fotocamera IA sotto Indirizzo */
+        .camera-container { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px 0; background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .btn-camera { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .camera-text { font-size: 13px; font-weight: 600; color: #555; }
+
+        /* Overlay Scansione IA */
+        .ocr-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .ocr-overlay.hidden { display: none; }
+        .ocr-card { background: #fff; padding: 20px; border-radius: 12px; width: 85%; max-width: 380px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .preview-container { position: relative; max-height: 220px; overflow: hidden; border-radius: 8px; margin: 15px 0; background: #000; }
+        .preview-container img { width: 100%; object-fit: contain; }
+        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #28a745; box-shadow: 0 0 8px #28a745; animation: scan 1.5s infinite ease-in-out; }
+        @keyframes scan { 0% { top: 0%; } 50% { top: 95%; } 100% { top: 0%; } }
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: background 0.3s ease; }
         .btn-add { background: var(--btn-add); color: white; }
         .btn-opt { background: var(--btn-opt); color: white; }
         .btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
-        
+        .btn-cancel { background: #dc3545; color: white; padding: 10px; border: none; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
         /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
         .batch-buttons { display: flex; gap: 4px; }
@@ -92,6 +108,14 @@
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
         <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
     </div>
+
+    <!-- Opzione Scatto Foto LDV -->
+    <div class="camera-container">
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="gestisciFotoLDV(event)">
+        <button type="button" class="btn-camera" onclick="document.getElementById('cameraInput').click()">📷</button>
+        <span class="camera-text">Usa la fotocamera per identificare l indirizzo</span>
+    </div>
+
     <label>Note (facoltativo):</label>
     <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
     
@@ -112,6 +136,20 @@
 
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
+
+<!-- Modal di Scansione/Lettura IA -->
+<div id="ocrOverlay" class="ocr-overlay hidden">
+    <div class="ocr-card">
+        <h4 style="margin:0 0 10px 0; color:#333;">Scansione LDV in corso...</h4>
+        <div class="preview-container">
+            <img id="ldvPreview" src="" alt="Anteprima LDV">
+            <div class="scan-line"></div>
+        </div>
+        <p style="font-size:13px; color:#666; margin-bottom:10px;">L'IA sta estraendo l'indirizzo di destinazione.</p>
+        <button class="btn-cancel" onclick="annullaScansione()">Annulla</button>
+    </div>
+</div>
+
 <script>
     let tappe = [];
     let geocoder;
@@ -120,13 +158,8 @@
     let giroIniziato = false;
     let comuneSelezionato = "";
 
-    function apriMenu() {
-        document.getElementById("sideMenu").style.width = "250px";
-    }
-
-    function chiudiMenu() {
-        document.getElementById("sideMenu").style.width = "0";
-    }
+    function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
+    function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
 
     function cambiaTemaDitta() {
         const ditta = document.getElementById('ditta').value;
@@ -165,9 +198,7 @@
         }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        cambiaTemaDitta();
-    });
+    window.addEventListener('DOMContentLoaded', () => { cambiaTemaDitta(); });
 
     function initAutocomplete() {
         try {
@@ -215,6 +246,26 @@
             indInput.placeholder = "Seleziona prima il comune...";
         }
         el.focus();
+    }
+
+    /* Gestione della Fotocamera e Anteprima */
+    function gestisciFotoLDV(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('ldvPreview').src = e.target.result;
+            document.getElementById('ocrOverlay').classList.remove('hidden');
+            
+            // Qui collegheremo la logica di estrazione testuale tramite IA
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function annullaScansione() {
+        document.getElementById('ocrOverlay').classList.add('hidden');
+        document.getElementById('cameraInput').value = '';
     }
 
     function geocodeAddress(address) {
@@ -329,57 +380,4 @@
         window.open(url, '_blank');
     }
 
-    function calcolaDistanza(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    async function ottimizzaGiro() {
-        if (tappe.length === 0) { alert("Aggiungi almeno una via!"); return; }
-        if (!navigator.geolocation) { alert("GPS non supportato."); return; }
-        
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const userLat = pos.coords.latitude;
-            const userLng = pos.coords.longitude;
-
-            let nonFatte = tappe.filter(t => !t.fatta);
-            if (nonFatte.length === 0) { alert("Tutte le tappe sono state completate!"); return; }
-
-            for (let t of nonFatte) {
-                if (t.lat === null || t.lng === null) {
-                    const coords = await geocodeAddress(t.indirizzo);
-                    if (coords) { t.lat = coords.lat; t.lng = coords.lng; }
-                }
-            }
-
-            nonFatte.sort((a, b) => {
-                const distA = (a.lat && a.lng) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB = (b.lat && b.lng) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
-                return distA - distB;
-            });
-
-            tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
-            render();
-        }, () => alert("Impossibile ottenere la posizione."));
-    }
-
-    function aggiornaPulsanteGuida() {
-        const btn = document.getElementById('btn-guided');
-        btn.style.display = tappe.length > 0 ? 'block' : 'none';
-    }
-
-    function avanzaiGiro() {
-        const prossima = tappe.find(t => !t.fatta);
-        if (prossima) {
-            const index = tappe.indexOf(prossima);
-            apriNavigatore(index);
-        } else {
-            alert("Giro terminato!");
-        }
-    }
-</script>
-</body>
-</html>
+    fu
