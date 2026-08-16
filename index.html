@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO</title>
+    <title>EasyDrop PRO v2.0</title>
     <!-- Caricamento Google Maps e Places API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
@@ -11,20 +11,33 @@
         .container { max-width: 480px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; margin-top: 0; }
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        
+        /* Contenitore input con tasto di pulizia 'X' */
+        .input-group { position: relative; display: flex; align-items: center; }
+        .input-group input { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        .btn-clear { position: absolute; right: 10px; background: #e0e0e0; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        
+        select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
         .btn-opt { background: #17a2b8; color: white; }
         .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
-        .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; cursor: pointer; }
+        
+        /* Stile lista tappe con Note e Flag */
+        .tappa { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; gap: 8px; }
+        .tappa-info { flex-grow: 1; cursor: pointer; }
+        .nota-badge { font-size: 12px; color: #666; font-style: italic; margin-top: 3px; display: block; }
         .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
         .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
-        .btn-del { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+        
+        .btn-action { background: #6c757d; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-del { background: #dc3545; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .checkbox-flag { transform: scale(1.2); margin-right: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦</h2>
+    <h2>EasyDrop PRO 📦 v2.0</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -35,10 +48,22 @@
     </select>
 
     <label>Comune:</label>
-    <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
+    <div class="input-group">
+        <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
+        <button class="btn-clear" onclick="pulisciCampo('comune')">✕</button>
+    </div>
 
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+    <div class="input-group">
+        <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+        <button class="btn-clear" onclick="pulisciCampo('indirizzo')">✕</button>
+    </div>
+
+    <label>Note (facoltativo):</label>
+    <div class="input-group">
+        <input type="text" id="note" placeholder="es. Pacco, Busta, Suonare 2° piano...">
+        <button class="btn-clear" onclick="pulisciCampo('note')">✕</button>
+    </div>
 
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
@@ -67,25 +92,65 @@
             { componentRestrictions: { country: 'it' } }
         );
 
-        // Quando selezioni il comune, "inchiodiamo" la ricerca delle vie
+        // 1. LIMITA LA VIA ALLA PROVINCIA (non più solo al comune stretto)
         autocompleteComune.addListener('place_changed', function() {
             const place = autocompleteComune.getPlace();
-            if (place && place.geometry && place.geometry.viewport) {
-                // Imposta i confini geografici del comune
-                autocompleteInd.setBounds(place.geometry.viewport);
-                // ATTIVA IL BLOCCO RIGIDO: google ora suggerirà solo vie in questo comune
-                autocompleteInd.setOptions({ strictBounds: true });
-                
-                // Pulizia UI
+            if (place && place.address_components) {
+                let provincia = "";
+                for (let comp of place.address_components) {
+                    if (comp.types.includes("administrative_area_level_2")) {
+                        provincia = comp.long_name;
+                        break;
+                    }
+                }
+
+                if (provincia) {
+                    geocoder.geocode({ address: provincia + ", Italia" }, (results, status) => {
+                        if (status === 'OK' && results[0] && results[0].geometry) {
+                            autocompleteInd.setBounds(results[0].geometry.viewport);
+                            autocompleteInd.setOptions({ strictBounds: false });
+                        }
+                    });
+                } else if (place.geometry && place.geometry.viewport) {
+                    autocompleteInd.setBounds(place.geometry.viewport);
+                    autocompleteInd.setOptions({ strictBounds: false });
+                }
+
                 document.getElementById('indirizzo').value = '';
-                document.getElementById('indirizzo').placeholder = "Via in " + place.name;
+                document.getElementById('indirizzo').placeholder = "Via (Provincia di " + (provincia || place.name) + ")";
             }
         });
+
+        // 3. RECUPERO LOG SALVATO ANTI-CRASH
+        caricaDaLocalStorage();
+        render();
+    }
+
+    // 2. CANCELLAZIONE RAPIDA DEI CAMPI 'X'
+    function pulisciCampo(id) {
+        document.getElementById(id).value = '';
+        if (id === 'comune') {
+            document.getElementById('indirizzo').value = '';
+            document.getElementById('indirizzo').placeholder = "Seleziona prima il comune...";
+        }
+    }
+
+    // 3. LOG PERSISTENTE ANTI-CRASH (localStorage)
+    function salvaInLocalStorage() {
+        localStorage.setItem('easydrop_tappe_v2', JSON.stringify(tappe));
+    }
+
+    function caricaDaLocalStorage() {
+        const dati = localStorage.getItem('easydrop_tappe_v2');
+        if (dati) {
+            try { tappe = JSON.parse(dati); } catch (e) { tappe = []; }
+        }
     }
 
     function aggiungiTappa() {
         const com = document.getElementById('comune').value.trim();
         const ind = document.getElementById('indirizzo').value.trim();
+        const note = document.getElementById('note').value.trim(); // 5. CAMPO NOTE
 
         if (!com || !ind) {
             alert("Inserisci sia il comune che l'indirizzo!");
@@ -104,13 +169,39 @@
 
         tappe.push({
             indirizzo: indirizzoCompleto,
+            note: note,
             cliccata: false,
             fatta: false,
+            selezionata: false,
             lat: lat,
             lng: lng
         });
         
         document.getElementById('indirizzo').value = '';
+        document.getElementById('note').value = '';
+        salvaInLocalStorage();
+        render();
+    }
+
+    // 4. FLAG SELEZIONE E MODIFICA TAPPE
+    function toggleSelezione(i) {
+        tappe[i].selezionata = !tappe[i].selezionata;
+        salvaInLocalStorage();
+    }
+
+    function modificaTappa(i) {
+        const nuovoIndirizzo = prompt("Modifica Indirizzo e Comune:", tappe[i].indirizzo);
+        if (nuovoIndirizzo === null) return;
+        
+        const nuoveNote = prompt("Modifica Note:", tappe[i].note || "");
+        if (nuoveNote === null) return;
+
+        tappe[i].indirizzo = nuovoIndirizzo.trim();
+        tappe[i].note = nuoveNote.trim();
+        tappe[i].lat = null; // Forza ricalcolo geocode alla prossima ottimizzazione
+        tappe[i].lng = null;
+
+        salvaInLocalStorage();
         render();
     }
 
@@ -124,9 +215,14 @@
             else if (t.cliccata) classeStato = 'evidenziata';
 
             list.innerHTML += `
-                <div class="tappa ${classeStato}" onclick="apriNavigatore(${i})">
-                    <span><strong>${i + 1}.</strong> ${t.indirizzo}</span>
-                    <button class="btn-del" onclick="event.stopPropagation(); rimuoviTappa(${i})">X</button>
+                <div class="tappa ${classeStato}">
+                    <input type="checkbox" class="checkbox-flag" ${t.selezionata ? 'checked' : ''} onchange="toggleSelezione(${i})">
+                    <div class="tappa-info" onclick="apriNavigatore(${i})">
+                        <strong>${i + 1}.</strong> ${t.indirizzo}
+                        ${t.note ? `<span class="nota-badge">📝 ${t.note}</span>` : ''}
+                    </div>
+                    <button class="btn-action" onclick="modificaTappa(${i})">✏️</button>
+                    <button class="btn-del" onclick="rimuoviTappa(${i})">✕</button>
                 </div>`;
         });
 
@@ -135,6 +231,7 @@
 
     function rimuoviTappa(i) {
         tappe.splice(i, 1);
+        salvaInLocalStorage();
         render();
     }
 
@@ -142,6 +239,7 @@
         if (tappe[i].fatta) return;
 
         tappe[i].cliccata = true;
+        salvaInLocalStorage();
         render();
 
         const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
@@ -150,6 +248,7 @@
         setTimeout(() => {
             if (confirm(`Consegna effettuata per:\n${tappe[i].indirizzo}?`)) {
                 tappe[i].fatta = true;
+                salvaInLocalStorage();
                 render();
             }
         }, 1000);
@@ -213,6 +312,7 @@
             });
 
             giroIniziato = false;
+            salvaInLocalStorage();
             render();
             alert("Giro ottimizzato dalla tua posizione!");
         }, (err) => {
