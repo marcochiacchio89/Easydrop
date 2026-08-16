@@ -37,7 +37,7 @@
         .input-container { position: relative; }
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
-        
+
         /* Sezione Fotocamera IA sotto Indirizzo */
         .camera-container { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px 0; background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border: 1px solid #e0e0e0; }
         .btn-camera { background: var(--primary-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
@@ -57,7 +57,7 @@
         .btn-opt { background: var(--btn-opt); color: white; }
         .btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         .btn-cancel { background: #dc3545; color: white; padding: 10px; border: none; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
+        
         /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
         .batch-buttons { display: flex; gap: 4px; }
@@ -158,8 +158,13 @@
     let giroIniziato = false;
     let comuneSelezionato = "";
 
-    function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
-    function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
+    function apriMenu() {
+        document.getElementById("sideMenu").style.width = "250px";
+    }
+
+    function chiudiMenu() {
+        document.getElementById("sideMenu").style.width = "0";
+    }
 
     function cambiaTemaDitta() {
         const ditta = document.getElementById('ditta').value;
@@ -198,7 +203,9 @@
         }
     }
 
-    window.addEventListener('DOMContentLoaded', () => { cambiaTemaDitta(); });
+    window.addEventListener('DOMContentLoaded', () => {
+        cambiaTemaDitta();
+    });
 
     function initAutocomplete() {
         try {
@@ -257,8 +264,6 @@
         reader.onload = function(e) {
             document.getElementById('ldvPreview').src = e.target.result;
             document.getElementById('ocrOverlay').classList.remove('hidden');
-            
-            // Qui collegheremo la logica di estrazione testuale tramite IA
         };
         reader.readAsDataURL(file);
     }
@@ -380,4 +385,5 @@
         window.open(url, '_blank');
     }
 
-    fu
+    function calcolaDistanza(lat1, lon1, lat2, lon2) {
+   
