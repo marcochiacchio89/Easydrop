@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.0</title>
+    <title>EasyDrop PRO v2.1</title>
     <!-- Caricamento Google Maps e Places API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
@@ -23,7 +23,7 @@
         .btn-opt { background: #17a2b8; color: white; }
         .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         
-        /* Stile lista tappe con Note e Flag */
+        /* Stile lista tappe */
         .tappa { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; gap: 8px; }
         .tappa-info { flex-grow: 1; cursor: pointer; }
         .nota-badge { font-size: 12px; color: #666; font-style: italic; margin-top: 3px; display: block; }
@@ -32,12 +32,12 @@
         
         .btn-action { background: #6c757d; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .btn-del { background: #dc3545; color: white; border: none; padding: 6px 9px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .checkbox-flag { transform: scale(1.2); margin-right: 4px; cursor: pointer; }
+        .checkbox-fatta { transform: scale(1.4); margin-right: 6px; cursor: pointer; accent-color: #28a745; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.0</h2>
+    <h2>EasyDrop PRO 📦 v2.1</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -92,50 +92,33 @@
             { componentRestrictions: { country: 'it' } }
         );
 
-        // 1. LIMITA LA VIA ALLA PROVINCIA (non più solo al comune stretto)
+        // 1. BLOCCO RIGIDO SUL COMUNE SELEZIONATO (strictBounds = true)
         autocompleteComune.addListener('place_changed', function() {
             const place = autocompleteComune.getPlace();
-            if (place && place.address_components) {
-                let provincia = "";
-                for (let comp of place.address_components) {
-                    if (comp.types.includes("administrative_area_level_2")) {
-                        provincia = comp.long_name;
-                        break;
-                    }
-                }
-
-                if (provincia) {
-                    geocoder.geocode({ address: provincia + ", Italia" }, (results, status) => {
-                        if (status === 'OK' && results[0] && results[0].geometry) {
-                            autocompleteInd.setBounds(results[0].geometry.viewport);
-                            autocompleteInd.setOptions({ strictBounds: false });
-                        }
-                    });
-                } else if (place.geometry && place.geometry.viewport) {
-                    autocompleteInd.setBounds(place.geometry.viewport);
-                    autocompleteInd.setOptions({ strictBounds: false });
-                }
-
+            if (place && place.geometry && place.geometry.viewport) {
+                // Imposta i confini esatti del comune scelto
+                autocompleteInd.setBounds(place.geometry.viewport);
+                // ATTIVA IL BLOCCO RIGIDO: suggerimenti limitati SOLO alle vie di questo comune
+                autocompleteInd.setOptions({ strictBounds: true });
+                
                 document.getElementById('indirizzo').value = '';
-                document.getElementById('indirizzo').placeholder = "Via (Provincia di " + (provincia || place.name) + ")";
+                document.getElementById('indirizzo').placeholder = "Via a " + place.name;
             }
         });
 
-        // 3. RECUPERO LOG SALVATO ANTI-CRASH
         caricaDaLocalStorage();
         render();
     }
 
-    // 2. CANCELLAZIONE RAPIDA DEI CAMPI 'X'
     function pulisciCampo(id) {
         document.getElementById(id).value = '';
         if (id === 'comune') {
             document.getElementById('indirizzo').value = '';
             document.getElementById('indirizzo').placeholder = "Seleziona prima il comune...";
+            autocompleteInd.setOptions({ strictBounds: false });
         }
     }
 
-    // 3. LOG PERSISTENTE ANTI-CRASH (localStorage)
     function salvaInLocalStorage() {
         localStorage.setItem('easydrop_tappe_v2', JSON.stringify(tappe));
     }
@@ -150,7 +133,7 @@
     function aggiungiTappa() {
         const com = document.getElementById('comune').value.trim();
         const ind = document.getElementById('indirizzo').value.trim();
-        const note = document.getElementById('note').value.trim(); // 5. CAMPO NOTE
+        const note = document.getElementById('note').value.trim();
 
         if (!com || !ind) {
             alert("Inserisci sia il comune che l'indirizzo!");
@@ -172,7 +155,6 @@
             note: note,
             cliccata: false,
             fatta: false,
-            selezionata: false,
             lat: lat,
             lng: lng
         });
@@ -183,10 +165,11 @@
         render();
     }
 
-    // 4. FLAG SELEZIONE E MODIFICA TAPPE
-    function toggleSelezione(i) {
-        tappe[i].selezionata = !tappe[i].selezionata;
+    // 2. SPUNTA MANUALE (FATTA / NON FATTA)
+    function toggleFatta(i) {
+        tappe[i].fatta = !tappe[i].fatta;
         salvaInLocalStorage();
+        render();
     }
 
     function modificaTappa(i) {
@@ -198,7 +181,7 @@
 
         tappe[i].indirizzo = nuovoIndirizzo.trim();
         tappe[i].note = nuoveNote.trim();
-        tappe[i].lat = null; // Forza ricalcolo geocode alla prossima ottimizzazione
+        tappe[i].lat = null;
         tappe[i].lng = null;
 
         salvaInLocalStorage();
@@ -216,13 +199,13 @@
 
             list.innerHTML += `
                 <div class="tappa ${classeStato}">
-                    <input type="checkbox" class="checkbox-flag" ${t.selezionata ? 'checked' : ''} onchange="toggleSelezione(${i})">
+                    <input type="checkbox" class="checkbox-fatta" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})" title="Segna come fatta/non fatta">
                     <div class="tappa-info" onclick="apriNavigatore(${i})">
                         <strong>${i + 1}.</strong> ${t.indirizzo}
                         ${t.note ? `<span class="nota-badge">📝 ${t.note}</span>` : ''}
                     </div>
-                    <button class="btn-action" onclick="modificaTappa(${i})">✏️</button>
-                    <button class="btn-del" onclick="rimuoviTappa(${i})">✕</button>
+                    <button class="btn-action" onclick="modificaTappa(${i})" title="Modifica">✏️</button>
+                    <button class="btn-del" onclick="rimuoviTappa(${i})" title="Elimina">✕</button>
                 </div>`;
         });
 
