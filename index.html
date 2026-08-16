@@ -4,109 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyDrop - Corrieri</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        body { font-family: sans-serif; background: #f4f6f9; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { color: #0056b3; text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
-        label { font-weight: bold; display: block; margin-top: 15px; }
-        select, input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        .btn-aggiungi { background: #28a745; margin-top: 10px; }
-        .btn-ottimizza { background: #0056b3; margin-top: 20px; }
-        button { width: 100%; color: white; border: none; padding: 14px; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        button:active { opacity: 0.8; }
-        ul { padding-left: 20px; margin-top: 10px; }
-        li { margin-bottom: 5px; font-size: 15px; }
-        .lista-box { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 10px; border: 1px solid #e9ecef; min-height: 50px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-save { background: #0056b3; color: white; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <h2>EasyDrop 📦</h2>
-    <div class="subtitle">Gestione Giro Corriere</div>
-    
-    <label for="ditta">Seleziona la tua Ditta:</label>
-    <select id="ditta">
-        <option value="SDA">SDA</option>
-        <option value="Poste Italiane">Poste Italiane</option>
-        <option value="Bartolini">Bartolini (BRT)</option>
-        <option value="GLS">GLS</option>
-        <option value="UPS">UPS</option>
-        <option value="DHL">DHL</option>
-        <option value="FedEx">FedEx</option>
-    </select>
-
-    <label for="comune">Comune di Lavoro:</label>
-    <input type="text" id="comune" placeholder="Es. Sant'Arpino">
-
-    <label for="nuovo_indirizzo">Aggiungi Consegna Singola:</label>
-    <input type="text" id="nuovo_indirizzo" placeholder="Es. Via Roma 15">
-    
-    <button class="btn-aggiungi" onclick="aggiungiConsegna()">+ Aggiungi Indirizzo</button>
-
-    <label>Tappe Inserite (<span id="totale_tappe">0</span>):</label>
-    <div class="lista-box">
-        <ul id="lista_tappe">
-            <li style="color: #888; list-style: none;">Nessuna consegna inserita</li>
-        </ul>
-    </div>
-
-    <button class="btn-ottimizza" onclick="avviaGiro()">🚀 Ottimizza Giro</button>
+    <select id="ditta"><option>SDA</option><option>Poste Italiane</option><option>Bartolini</option></select>
+    <input type="text" id="comune" placeholder="Comune di lavoro">
+    <input type="text" id="indirizzo_input" placeholder="Aggiungi indirizzo">
+    <button class="btn-add" onclick="aggiungi()">+ Aggiungi Indirizzo</button>
+    <ul id="lista"></ul>
+    <button class="btn-save" onclick="inviaAlDatabase()">🚀 Salva nel Cloud</button>
 </div>
 
 <script>
-    let tappeArray = [];
+    const supabase = supabase.createClient('https://jfhejqhxtvhgfrjdfleq.supabase.co', 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh');
+    let tappe = [];
 
-    function aggiungiConsegna() {
-        const inputIndirizzo = document.getElementById('nuovo_indirizzo');
-        const indirizzo = inputIndirizzo.value.trim();
-
-        if(!indirizzo) {
-            alert("Scrivi prima un indirizzo valido!");
-            return;
+    function aggiungi() {
+        const ind = document.getElementById('indirizzo_input');
+        if(ind.value) {
+            tappe.push(ind.value);
+            document.getElementById('lista').innerHTML += `<li>${ind.value}</li>`;
+            ind.value = '';
         }
-
-        // Aggiunge l'indirizzo alla lista locale
-        tappeArray.push(indirizzo);
-        aggiornaListaGrafica();
-        
-        // Pulisce il campo di testo per la prossima consegna
-        inputIndirizzo.value = '';
-        inputIndirizzo.focus();
     }
 
-    function aggiornaListaGrafica() {
-        const listaUl = document.getElementById('lista_tappe');
-        const contatore = document.getElementById('totale_tappe');
-        
-        contatore.innerText = tappeArray.length;
-
-        if (tappeArray.length === 0) {
-            listaUl.innerHTML = '<li style="color: #888; list-style: none;">Nessuna consegna inserita</li>';
-            return;
-        }
-
-        listaUl.innerHTML = '';
-        tappeArray.forEach((tappa, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<b>${index + 1}.</b> ${tappa} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa)}" target="_blank" style="font-size:13px; margin-left:10px; color:#0056b3;">🗺️ Mappa</a>`;
-            listaUl.appendChild(li);
-        });
-    }
-
-    function avviaGiro() {
+    async function inviaAlDatabase() {
         const ditta = document.getElementById('ditta').value;
         const comune = document.getElementById('comune').value;
+        
+        const { error } = await supabase.from('Consegne').insert({ 
+            ditta: ditta, 
+            comune: comune, 
+            indirizzi: JSON.stringify(tappe) 
+        });
 
-        if(tappeArray.length === 0) {
-            alert("Inserisci almeno una consegna prima di ottimizzare il giro!");
-            return;
-        }
-
-        alert(`Giro pronto per ${ditta} a ${comune}! Totale fermate: ${tappeArray.length}. Invio al server in corso...`);
+        if(error) alert("Errore: " + error.message);
+        else alert("Giro salvato con successo!");
     }
 </script>
-
 </body>
 </html>
