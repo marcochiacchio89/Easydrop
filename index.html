@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.5</title>
+    <title>EasyDrop PRO V 3.6</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         :root {
@@ -37,6 +37,10 @@
         .input-container { position: relative; }
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
+        
+        /* Box Orari Negozio */
+        .orari-box { font-size: 12px; color: #444; margin-top: 6px; display: none; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; line-height: 1.4; }
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: background 0.3s ease; }
         .btn-add { background: var(--btn-add); color: white; }
         .btn-opt { background: var(--btn-opt); color: white; }
@@ -62,7 +66,7 @@
 <body>
 <div class="container">
     <div class="app-header">
-        <h2>EasyDrop PRO V 3.5 📦</h2>
+        <h2>EasyDrop PRO V 3.6 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
@@ -92,6 +96,8 @@
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
         <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
     </div>
+    <div id="orari-negozio" class="orari-box"></div>
+
     <label>Note (facoltativo):</label>
     <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
     
@@ -173,7 +179,11 @@
         try {
             geocoder = new google.maps.Geocoder();
             autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
-            autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
+            
+            autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { 
+                componentRestrictions: { country: 'it' },
+                fields: ['geometry', 'name', 'opening_hours', 'formatted_address']
+            });
 
             autocompleteComune.addListener('place_changed', function() {
                 const place = autocompleteComune.getPlace();
@@ -185,6 +195,24 @@
                     indInput.disabled = false;
                     indInput.value = '';
                     indInput.placeholder = "Via in " + comuneSelezionato;
+                    document.getElementById('orari-negozio').style.display = 'none';
+                    document.getElementById('orari-negozio').innerHTML = '';
+                }
+            });
+
+            autocompleteInd.addListener('place_changed', function() {
+                const place = autocompleteInd.getPlace();
+                const orariBox = document.getElementById('orari-negozio');
+                if (place && place.opening_hours && place.opening_hours.weekday_text) {
+                    let html = "<strong>🕒 Orari di apertura:</strong><br>";
+                    place.opening_hours.weekday_text.forEach(giorno => {
+                        html += `${giorno}<br>`;
+                    });
+                    orariBox.innerHTML = html;
+                    orariBox.style.display = 'block';
+                } else {
+                    orariBox.innerHTML = "<em>Nessun orario disponibile per questo indirizzo</em>";
+                    orariBox.style.display = 'block';
                 }
             });
 
@@ -196,6 +224,8 @@
                     indInput.value = "";
                     indInput.disabled = true;
                     indInput.placeholder = "Seleziona prima il comune...";
+                    document.getElementById('orari-negozio').style.display = 'none';
+                    document.getElementById('orari-negozio').innerHTML = '';
                 } else {
                     indInput.disabled = false;
                     indInput.placeholder = "Inserisci via...";
@@ -213,6 +243,10 @@
             indInput.value = '';
             indInput.disabled = true;
             indInput.placeholder = "Seleziona prima il comune...";
+        }
+        if (id === 'indirizzo' || id === 'comune') {
+            document.getElementById('orari-negozio').style.display = 'none';
+            document.getElementById('orari-negozio').innerHTML = '';
         }
         el.focus();
     }
@@ -251,6 +285,8 @@
         tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
         document.getElementById('indirizzo').value = '';
         document.getElementById('note').value = '';
+        document.getElementById('orari-negozio').style.display = 'none';
+        document.getElementById('orari-negozio').innerHTML = '';
         render();
     }
 
@@ -357,29 +393,4 @@
 
             nonFatte.sort((a, b) => {
                 const distA = (a.lat && a.lng) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB = (b.lat && b.lng) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
-                return distA - distB;
-            });
-
-            tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
-            render();
-        }, () => alert("Impossibile ottenere la posizione."));
-    }
-
-    function aggiornaPulsanteGuida() {
-        const btn = document.getElementById('btn-guided');
-        btn.style.display = tappe.length > 0 ? 'block' : 'none';
-    }
-
-    function avanzaiGiro() {
-        const prossima = tappe.find(t => !t.fatta);
-        if (prossima) {
-            const index = tappe.indexOf(prossima);
-            apriNavigatore(index);
-        } else {
-            alert("Giro terminato!");
-        }
-    }
-</script>
-</body>
-</html>
+                const distB =
