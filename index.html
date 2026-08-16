@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyDrop - Corrieri</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -12,6 +11,8 @@
         button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
         .btn-save { background: #0056b3; color: white; }
+        ul { padding-left: 20px; }
+        li { margin: 5px 0; }
     </style>
 </head>
 <body>
@@ -26,30 +27,58 @@
 </div>
 
 <script>
-    const supabase = supabase.createClient('https://jfhejqhxtvhgfrjdfleq.supabase.co', 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh');
+    const SUPABASE_URL = 'https://jfhejqhxtvhgfrjdfleq.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh';
     let tappe = [];
 
     function aggiungi() {
         const ind = document.getElementById('indirizzo_input');
-        if(ind.value) {
-            tappe.push(ind.value);
+        if(ind.value.trim() !== "") {
+            tappe.push(ind.value.trim());
             document.getElementById('lista').innerHTML += `<li>${ind.value}</li>`;
             ind.value = '';
+        } else {
+            alert("Scrivi un indirizzo valido!");
         }
     }
 
     async function inviaAlDatabase() {
         const ditta = document.getElementById('ditta').value;
         const comune = document.getElementById('comune').value;
-        
-        const { error } = await supabase.from('Consegne').insert({ 
-            ditta: ditta, 
-            comune: comune, 
-            indirizzi: JSON.stringify(tappe) 
-        });
 
-        if(error) alert("Errore: " + error.message);
-        else alert("Giro salvato con successo!");
+        if(tappe.length === 0) {
+            alert("Aggiungi almeno un indirizzo prima di salvare!");
+            return;
+        }
+
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/Consegne`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                },
+                body: JSON.stringify({
+                    ditta: ditta,
+                    comune: comune,
+                    indirizzi: tappe
+                })
+            });
+
+            if (response.ok) {
+                alert("Giro salvato con successo nel database!");
+                tappe = [];
+                document.getElementById('lista').innerHTML = '';
+                document.getElementById('comune').value = '';
+            } else {
+                const errData = await response.json();
+                alert("Errore dal server: " + (errData.message || response.statusText));
+            }
+        } catch (error) {
+            alert("Errore di connessione: " + error.message);
+        }
     }
 </script>
 </body>
