@@ -120,17 +120,6 @@
                     indInput.placeholder = "Inserisci via...";
                 }
             });
-
-            autocompleteInd.addListener('place_changed', function() {
-                const place = autocompleteInd.getPlace();
-                if (place) {
-                    let val = place.name || document.getElementById('indirizzo').value;
-                    if (comuneSelezionato && val.toLowerCase().includes(comuneSelezionato.toLowerCase())) {
-                        val = val.replace(new RegExp(comuneSelezionato, 'gi'), '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
-                    }
-                    document.getElementById('indirizzo').value = val;
-                }
-            });
         } catch (e) {
             console.error("Errore nell'inizializzazione di Google Maps:", e);
         }
@@ -168,13 +157,8 @@
             alert("Inserisci sia il comune che l'indirizzo!"); 
             return; 
         }
-        
-        let viaPulita = indInput;
-        if (comuneSelezionato && viaPulita.toLowerCase().includes(comuneSelezionato.toLowerCase())) {
-            viaPulita = viaPulita.replace(new RegExp(comuneSelezionato, 'gi'), '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim();
-        }
 
-        const indirizzoCompleto = `${viaPulita}, ${com}`;
+        const indirizzoCompleto = `${indInput}, ${com}`;
         let lat = null;
         let lng = null;
 
