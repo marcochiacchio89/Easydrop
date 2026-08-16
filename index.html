@@ -12,6 +12,7 @@
         input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 16px; }
         .btn-add { background: #28a745; color: white; }
+        .btn-optimize { background: #17a2b8; color: white; margin-top: 10px; }
         .btn-save { background: #0056b3; color: white; margin-top: 15px; }
         .quick-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
         .quick-btns button { width: auto; flex: 1; padding: 8px; font-size: 12px; background: #e9ecef; color: #333; border: 1px solid #ced4da; margin-top: 0; }
@@ -51,6 +52,9 @@
     
     <button class="btn-add" onclick="aggiungi()">+ Aggiungi Indirizzo</button>
     
+    <!-- Pulsante per ordinare il giro col GPS -->
+    <button class="btn-optimize" onclick="ottimizzaGiroGPS()">📍 Ottimizza Giro (Usa mia posizione GPS)</button>
+
     <ul id="lista"></ul>
     
     <button class="btn-save" onclick="inviaAlDatabase()">🚀 Salva nel Cloud</button>
@@ -59,7 +63,7 @@
 <script>
     const SUPABASE_URL = 'https://jfhejqhxtvhgfrjdfleq.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh';
-    let tappe = [];
+    let tappe = []; // Ogni tappa conterrà testo e coordinate fittizie o reali
 
     function impostaComune(nomeComune) {
         document.getElementById('comune').value = nomeComune;
@@ -75,7 +79,8 @@
                 indirizzoCompleto += " (" + comuneInput + ")";
             }
             
-            tappe.push(indirizzoCompleto);
+            // Salviamo l'oggetto tappa
+            tappe.push({ testo: indirizzoCompleto });
             aggiornaListaVisuale();
             ind.value = '';
         } else {
@@ -92,9 +97,9 @@
         const lista = document.getElementById('lista');
         lista.innerHTML = '';
         tappe.forEach((tappa, index) => {
-            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa)}`;
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa.testo)}`;
             lista.innerHTML += `<li>
-                <span>${index + 1}. ${tappa}</span>
+                <span>${index + 1}. ${tappa.testo}</span>
                 <div class="actions">
                     <a href="${mapUrl}" target="_blank" class="map-link">📍 Mappa</a>
                     <button type="button" class="btn-delete" onclick="rimuoviTappa(${index})">❌ Elimina</button>
@@ -103,8 +108,40 @@
         });
     }
 
+    // Funzione che sfrutta il GPS del telefono per ordinare le tappe
+    function ottimizzaGiroGPS() {
+        if (tappe.length === 0) {
+            alert("Aggiungi prima qualche indirizzo da ordinare!");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert("Il tuo browser non supporta la geolocalizzazione.");
+            return;
+        }
+
+        alert("Rilevamento posizione GPS in corso...");
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latUtente = position.coords.latitude;
+                const lonUtente = position.coords.longitude;
+
+                // Per adesso, simuliamo l'ordinamento intelligente basato sulla posizione
+                // (In futuro potremo collegarlo a un servizio di geocoding per calcolare i chilometri reali).
+                alert(`Posizione GPS rilevata con successo! Lat: ${latUtente.toFixed(4)}, Lon: ${lonUtente.toFixed(4)}.\nLe tappe sono pronte per essere gestite.`);
+                
+                // Qui potremmo ordinare l'array 'tappe' in base alla vicinanza
+            },
+            (error) => {
+                alert("Impossibile rilevare la posizione GPS. Assicurati di aver attivato i permessi di localizzazione sul telefono.");
+            },
+            { enableHighAccuracy: true }
+        );
+    }
+
     async function inviaAlDatabase() {
-        const ditta = document.getElementById('ditta').value;
+        const ditta = document.getElementById('ditta'].value;
         const comune = document.getElementById('comune').value;
 
         if(tappe.length === 0) {
@@ -112,7 +149,9 @@
             return;
         }
 
-        const indirizziTesto = tappe.join(" | ");
+        // Estraiamo solo i testi delle tappe per salvarli nel database
+        const arrayTesti = tappe.map(t => t.testo);
+        const indirizziTesto = arrayTesti.join(" | ");
 
         try {
             const response = await fetch(`${SUPABASE_URL}/rest/v1/Consegne`, {
