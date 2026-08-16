@@ -3,26 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop - Corrieri</title>
+    <title>EasyDrop - Gestione Consegne</title>
     <style>
-        body { font-family: sans-serif; background: #f4f6f9; padding: 20px; }
+        body { font-family: sans-serif; background: #f4f6f9; padding: 15px; margin: 0; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
+        input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 16px; }
         .btn-add { background: #28a745; color: white; }
-        .btn-save { background: #0056b3; color: white; }
-        ul { padding-left: 20px; }
-        li { margin: 5px 0; }
+        .btn-save { background: #0056b3; color: white; margin-top: 15px; }
+        ul { padding-left: 0; list-style: none; margin-top: 15px; }
+        li { background: #f8f9fa; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
+        .map-link { background: #ffc107; color: #000; padding: 6px 10px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; white-space: nowrap; margin-left: 10px; }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>EasyDrop 📦</h2>
-    <select id="ditta"><option>SDA</option><option>Poste Italiane</option><option>Bartolini</option></select>
-    <input type="text" id="comune" placeholder="Comune di lavoro">
-    <input type="text" id="indirizzo_input" placeholder="Aggiungi indirizzo">
+    
+    <label for="ditta">Seleziona Ditta:</label>
+    <select id="ditta">
+        <option>SDA</option>
+        <option>Bartolini (BRT)</option>
+        <option>Poste Italiane</option>
+        <option>GLS</option>
+        <option>FedEx</option>
+        <option>UPS</option>
+    </select>
+
+    <label for="comune">Comune di lavoro:</label>
+    <input type="text" id="comune" list="comuni-list" placeholder="Digita o seleziona comune...">
+    <datalist id="comuni-list">
+        <option value="Sant'Arpino (CE)">
+        <option value="Succivo (CE)">
+        <option value="Orta di Atella (CE)">
+        <option value="Gricignano di Aversa (CE)">
+        <option value="Aversa (CE)">
+        <option value="Cesa (CE)">
+        <option value="Frattaminore (NA)">
+        <option value="Frattamaggiore (NA)">
+        <option value="Grumo Nevano (NA)">
+        <option value="Sant'Antimo (NA)">
+        <option value="Marcianise (CE)">
+    </datalist>
+
+    <label for="indirizzo_input">Aggiungi Indirizzo:</label>
+    <input type="text" id="indirizzo_input" list="strade-list" placeholder="Es. Via Roma">
+    <datalist id="strade-list">
+        <option value="Via Fratelli Cervi">
+        <option value="Via Roma">
+        <option value="Via Diaz">
+        <option value="Corso Umberto I">
+        <option value="Via Matteotti">
+        <option value="Via Garibaldi">
+    </datalist>
+    
     <button class="btn-add" onclick="aggiungi()">+ Aggiungi Indirizzo</button>
+    
     <ul id="lista"></ul>
+    
     <button class="btn-save" onclick="inviaAlDatabase()">🚀 Salva nel Cloud</button>
 </div>
 
@@ -33,13 +73,32 @@
 
     function aggiungi() {
         const ind = document.getElementById('indirizzo_input');
+        const comuneInput = document.getElementById('comune').value.trim();
+        
         if(ind.value.trim() !== "") {
-            tappe.push(ind.value.trim());
-            document.getElementById('lista').innerHTML += `<li>${ind.value}</li>`;
+            let indirizzoCompleto = ind.value.trim();
+            if(comuneInput) {
+                indirizzoCompleto += " (" + comuneInput + ")";
+            }
+            
+            tappe.push(indirizzoCompleto);
+            aggiornaListaVisuale();
             ind.value = '';
         } else {
-            alert("Scrivi un indirizzo valido!");
+            alert("Inserisci un indirizzo valido!");
         }
+    }
+
+    function aggiornaListaVisuale() {
+        const lista = document.getElementById('lista');
+        lista.innerHTML = '';
+        tappe.forEach((tappa, index) => {
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tappa)}`;
+            lista.innerHTML += `<li>
+                <span>${index + 1}. ${tappa}</span>
+                <a href="${mapUrl}" target="_blank" class="map-link">📍 Mappa</a>
+            </li>`;
+        });
     }
 
     async function inviaAlDatabase() {
@@ -51,7 +110,6 @@
             return;
         }
 
-        // Trasformiamo l'array in una stringa separata da virgole per evitare errori di formato
         const indirizziStringa = tappe.join(" | ");
 
         try {
