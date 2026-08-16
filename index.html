@@ -10,7 +10,11 @@
         .container { max-width: 480px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; margin-top: 0; }
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        input, select { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        select { padding-right: 12px; }
+        .input-container { position: relative; }
+        .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
+        .clear-btn:hover { color: #333; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
         .btn-opt { background: #17a2b8; color: white; }
@@ -42,9 +46,15 @@
         <option>GLS</option>
     </select>
     <label>Comune:</label>
-    <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
+    <div class="input-container">
+        <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
+        <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
+    </div>
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+    <div class="input-container">
+        <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+        <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
+    </div>
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
@@ -55,7 +65,7 @@
         </label>
         <div class="batch-buttons">
             <button class="btn-batch btn-batch-done" onclick="impostaStatoSelezionate(true, false)">✅ Fatta</button>
-            <button class="btn-batch btn-batch-highlight" onclick="impostaStatoSelezionate(false, true)">🟡 Evidenzia</button>
+            <button class="btn-batch btn-batch-highlight" onclick="toggleEvidenziaSelezionate()">🟡 Evidenzia</button>
             <button class="btn-batch btn-batch-del" onclick="eliminaSelezionate()">🗑 Elimina</button>
         </div>
     </div>
@@ -103,6 +113,16 @@
         } catch (e) {
             console.error("Errore nell'inizializzazione di Google Maps:", e);
         }
+    }
+
+    function pulisciCampo(id) {
+        const el = document.getElementById(id);
+        el.value = '';
+        if (id === 'comune') {
+            comuneSelezionato = "";
+            document.getElementById('indirizzo').placeholder = "Inserisci prima il comune...";
+        }
+        el.focus();
     }
 
     function geocodeAddress(address) {
@@ -204,6 +224,19 @@
         render();
     }
 
+    function toggleEvidenziaSelezionate() {
+        const selezionate = tappe.filter(t => t.selezionata);
+        if (selezionate.length === 0) {
+            alert("Seleziona almeno una tappa tramite il flag.");
+            return;
+        }
+        const tutteEvidenziate = selezionate.every(t => t.cliccata);
+        selezionate.forEach(t => {
+            t.cliccata = !tutteEvidenziate;
+        });
+        render();
+    }
+
     function eliminaSelezionate() {
         const daEliminare = tappe.filter(t => t.selezionata).length;
         if (daEliminare === 0) {
@@ -224,11 +257,10 @@
 
     function apriNavigatore(i) {
         if (tappe[i].fatta) return;
-        tappe[i].cliccata = true; // Evidenzia automaticamente la tappa cliccata
+        tappe[i].cliccata = true;
         render();
         const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
         window.open(url, '_blank');
-        // Popup di conferma rimosso come richiesto
     }
 
     function calcolaDistanza(lat1, lon1, lat2, lon2) {
