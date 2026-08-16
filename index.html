@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.3</title>
+    <title>EasyDrop PRO V 3.4</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         :root {
@@ -40,7 +40,9 @@
         .btn-batch-del { background: #dc3545; }
         
         .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid var(--primary-color); cursor: pointer; }
-        .tappa-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+        .tappa-left { display: flex; align-items: center; gap: 10px; overflow: hidden; flex-direction: column; align-items: flex-start; width: 100%; }
+        .tappa-text { width: 100%; display: flex; align-items: center; gap: 10px; }
+        .tappa-note { font-size: 12px; color: #666; font-style: italic; margin-top: 4px; display: block; }
         .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
         .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
         .btn-del { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
@@ -48,7 +50,7 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO V 3.3 📦</h2>
+    <h2>EasyDrop PRO V 3.4 📦</h2>
     <label>Ditta:</label>
     <select id="ditta" onchange="cambiaTemaDitta()">
         <option value="SDA">SDA</option>
@@ -67,6 +69,9 @@
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
         <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
     </div>
+    <label>Note (facoltativo):</label>
+    <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
+    
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
@@ -97,35 +102,30 @@
         const root = document.documentElement;
 
         if (ditta === "SDA") {
-            // Blu e Giallo istituzionale SDA / Poste
             root.style.setProperty('--bg-body', '#eef3f9');
             root.style.setProperty('--primary-color', '#003366');
             root.style.setProperty('--btn-add', '#003366');
             root.style.setProperty('--btn-opt', '#d4af37');
             root.style.setProperty('--btn-guided', '#003366');
         } else if (ditta === "BRT") {
-            // Rosso Bartolini
             root.style.setProperty('--bg-body', '#fcf2f2');
             root.style.setProperty('--primary-color', '#cc0000');
             root.style.setProperty('--btn-add', '#cc0000');
             root.style.setProperty('--btn-opt', '#333333');
             root.style.setProperty('--btn-guided', '#cc0000');
         } else if (ditta === "Poste Italiane") {
-            // Giallo e Blu Poste
             root.style.setProperty('--bg-body', '#fdfae5');
             root.style.setProperty('--primary-color', '#004225');
             root.style.setProperty('--btn-add', '#e6af00');
             root.style.setProperty('--btn-opt', '#004225');
             root.style.setProperty('--btn-guided', '#e6af00');
         } else if (ditta === "GLS") {
-            // Rosso e Grigio/Blu GLS
             root.style.setProperty('--bg-body', '#f7f4f4');
             root.style.setProperty('--primary-color', '#002060');
             root.style.setProperty('--btn-add', '#002060');
             root.style.setProperty('--btn-opt', '#c00000');
             root.style.setProperty('--btn-guided', '#002060');
         } else if (ditta === "DHL") {
-            // Giallo e Rosso DHL
             root.style.setProperty('--bg-body', '#fffbe6');
             root.style.setProperty('--primary-color', '#d40511');
             root.style.setProperty('--btn-add', '#d40511');
@@ -134,7 +134,6 @@
         }
     }
 
-    // Imposta il tema iniziale all'avvio
     window.addEventListener('DOMContentLoaded', () => {
         cambiaTemaDitta();
     });
@@ -142,15 +141,8 @@
     function initAutocomplete() {
         try {
             geocoder = new google.maps.Geocoder();
-            
-            autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { 
-                types: ['locality'], 
-                componentRestrictions: { country: 'it' } 
-            });
-            
-            autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { 
-                componentRestrictions: { country: 'it' } 
-            });
+            autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
+            autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
 
             autocompleteComune.addListener('place_changed', function() {
                 const place = autocompleteComune.getPlace();
@@ -178,9 +170,7 @@
                     indInput.placeholder = "Inserisci via...";
                 }
             });
-        } catch (e) {
-            console.error("Errore nell'inizializzazione di Google Maps:", e);
-        }
+        } catch (e) { console.error("Errore:", e); }
     }
 
     function pulisciCampo(id) {
@@ -210,11 +200,9 @@
     async function aggiungiTappa() {
         let com = comuneSelezionato || document.getElementById('comune').value.trim();
         const indInput = document.getElementById('indirizzo').value.trim();
+        const noteInput = document.getElementById('note').value.trim();
         
-        if (!com || !indInput) { 
-            alert("Inserisci sia il comune che l'indirizzo!"); 
-            return; 
-        }
+        if (!com || !indInput) { alert("Inserisci sia il comune che l'indirizzo!"); return; }
 
         const indirizzoCompleto = `${indInput}, ${com}`;
         let lat = null;
@@ -226,14 +214,12 @@
             lng = place.geometry.location.lng();
         } else {
             const coords = await geocodeAddress(indirizzoCompleto);
-            if (coords) {
-                lat = coords.lat;
-                lng = coords.lng;
-            }
+            if (coords) { lat = coords.lat; lng = coords.lng; }
         }
 
-        tappe.push({ indirizzo: indirizzoCompleto, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
+        tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
         document.getElementById('indirizzo').value = '';
+        document.getElementById('note').value = '';
         render();
     }
 
@@ -242,12 +228,8 @@
         const batchBar = document.getElementById('batch-bar');
         list.innerHTML = '';
         
-        if (tappe.length > 0) {
-            batchBar.style.display = 'flex';
-        } else {
-            batchBar.style.display = 'none';
-            document.getElementById('seleziona-tutti').checked = false;
-        }
+        if (tappe.length > 0) batchBar.style.display = 'flex';
+        else { batchBar.style.display = 'none'; document.getElementById('seleziona-tutti').checked = false; }
 
         tappe.forEach((t, i) => {
             let classeStato = '';
@@ -256,8 +238,11 @@
             
             list.innerHTML += `<div class="tappa ${classeStato}" onclick="apriNavigatore(${i})">
                     <div class="tappa-left">
-                        <input type="checkbox" ${t.selezionata ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelezionaTappa(${i}, this)">
-                        <span><strong>${i + 1}.</strong> ${t.indirizzo}</span>
+                        <div class="tappa-text">
+                            <input type="checkbox" ${t.selezionata ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelezionaTappa(${i}, this)">
+                            <span><strong>${i + 1}.</strong> ${t.indirizzo}</span>
+                        </div>
+                        ${t.note ? `<span class="tappa-note">📝 ${t.note}</span>` : ''}
                     </div>
                     <button class="btn-del" onclick="event.stopPropagation(); rimuoviTappa(${i})">X</button>
                 </div>`;
@@ -279,48 +264,31 @@
 
     function toggleFattaSelezionate() {
         const selezionate = tappe.filter(t => t.selezionata);
-        if (selezionate.length === 0) {
-            alert("Seleziona almeno una tappa tramite il flag.");
-            return;
-        }
+        if (selezionate.length === 0) { alert("Seleziona almeno una tappa."); return; }
         const tutteFatte = selezionate.every(t => t.fatta);
-        selezionate.forEach(t => {
-            t.fatta = !tutteFatte;
-            if (!tutteFatte) t.cliccata = false;
-        });
+        selezionate.forEach(t => { t.fatta = !tutteFatte; if (!tutteFatte) t.cliccata = false; });
         render();
     }
 
     function toggleEvidenziaSelezionate() {
         const selezionate = tappe.filter(t => t.selezionata);
-        if (selezionate.length === 0) {
-            alert("Seleziona almeno una tappa tramite il flag.");
-            return;
-        }
+        if (selezionate.length === 0) { alert("Seleziona almeno una tappa."); return; }
         const tutteEvidenziate = selezionate.every(t => t.cliccata);
-        selezionate.forEach(t => {
-            t.cliccata = !tutteEvidenziate;
-        });
+        selezionate.forEach(t => { t.cliccata = !tutteEvidenziate; });
         render();
     }
 
     function eliminaSelezionate() {
         const daEliminare = tappe.filter(t => t.selezionata).length;
-        if (daEliminare === 0) {
-            alert("Seleziona almeno una tappa da eliminare.");
-            return;
-        }
-        if (confirm(`Vuoi davvero eliminare ${daEliminare} tappe selezionate?`)) {
+        if (daEliminare === 0) { alert("Seleziona almeno una tappa."); return; }
+        if (confirm(`Vuoi eliminare ${daEliminare} tappe?`)) {
             tappe = tappe.filter(t => !t.selezionata);
             document.getElementById('seleziona-tutti').checked = false;
             render();
         }
     }
 
-    function rimuoviTappa(i) { 
-        tappe.splice(i, 1); 
-        render(); 
-    }
+    function rimuoviTappa(i) { tappe.splice(i, 1); render(); }
 
     function apriNavigatore(i) {
         if (tappe[i].fatta) return;
@@ -345,41 +313,41 @@
         navigator.geolocation.getCurrentPosition(async (pos) => {
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
-            
-            for (let t of tappe) {
+
+            let nonFatte = tappe.filter(t => !t.fatta);
+            if (nonFatte.length === 0) { alert("Tutte le tappe sono state completate!"); return; }
+
+            for (let t of nonFatte) {
                 if (t.lat === null || t.lng === null) {
                     const coords = await geocodeAddress(t.indirizzo);
                     if (coords) { t.lat = coords.lat; t.lng = coords.lng; }
                 }
             }
-            
-            tappe.sort((a, b) => {
-                if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
-                const distA = (a.lat !== null && a.lng !== null) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB = (b.lat !== null && b.lng !== null) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
+
+            nonFatte.sort((a, b) => {
+                const distA = (a.lat && a.lng) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
+                const distB = (b.lat && b.lng) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
                 return distA - distB;
             });
-            
-            giroIniziato = false;
-            render();
-            alert("Giro ottimizzato dalla tua posizione!");
-        }, (err) => { alert("Attiva ilGPS!"); });
-    }
 
-    function avanziaGiro() {
-        const prossimoIndex = tappe.findIndex(t => !t.fatta);
-        if (prossimoIndex === -1) { alert("Tutto consegnato!"); return; }
-        giroIniziato = true;
-        apriNavigatore(prossimoIndex);
+            tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
+            render();
+        }, () => alert("Impossibile ottenere la posizione."));
     }
 
     function aggiornaPulsanteGuida() {
-        const btnGuided = document.getElementById('btn-guided');
-        if (tappe.length === 0) { btnGuided.style.display = 'none'; return; }
-        const prossimoIndex = tappe.findIndex(t => !t.fatta);
-        if (prossimoIndex === -1) { btnGuided.style.display = 'block'; btnGuided.innerText = "🎉 GIRO COMPLETATO"; btnGuided.style.background = "#28a745"; }
-        else if (giroIniziato) { btnGuided.style.display = 'block'; btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`; }
-        else { btnGuided.style.display = 'block'; btnGuided.innerText = "🚀 INIZIA GIRO"; }
+        const btn = document.getElementById('btn-guided');
+        btn.style.display = tappe.length > 0 ? 'block' : 'none';
+    }
+
+    function avanzaiGiro() {
+        const prossima = tappe.find(t => !t.fatta);
+        if (prossima) {
+            const index = tappe.indexOf(prossima);
+            apriNavigatore(index);
+        } else {
+            alert("Giro terminato!");
+        }
     }
 </script>
 </body>
