@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.3</title>
+    <title>EasyDrop PRO v2.4</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
@@ -48,7 +48,7 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.3</h2>
+    <h2>EasyDrop PRO 📦 v2.4</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -102,7 +102,6 @@
     let placesService;
     let giroIniziato = false;
     
-    // Variabili temporanee per memorizzare i dati dell'attività
     let tempIsBusiness = false;
     let tempOrari = "";
 
@@ -169,17 +168,15 @@
                     document.getElementById('indirizzo').value = p.structured_formatting.main_text;
                     suggerimentiBox.style.display = 'none';
                     
-                    // Controlla se è un'attività commerciale e recupera gli orari
                     placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
                         if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
                             if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
                                 tempIsBusiness = true;
                                 if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
-                                    // Adatta l'indice del giorno (JS 0=Dom, Google 0=Lun)
                                     let todayIndex = (new Date().getDay() + 6) % 7; 
                                     let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
                                     if(stringaOggi) {
-                                        tempOrari = stringaOggi.split(': ')[1]; // Prende solo la parte degli orari
+                                        tempOrari = stringaOggi.split(': ')[1];
                                     }
                                 }
                             }
@@ -252,14 +249,12 @@
         render();
     }
 
-    // 1. Funzione Seleziona Tutto
     function toggleTutte(stato) {
         tappe.forEach(t => t.fatta = stato);
         salvaInLocalStorage();
         render();
     }
 
-    // 4. Spostamento Manuale (Priorità)
     function spostaTappa(index, direzione) {
         if (index + direzione < 0 || index + direzione >= tappe.length) return;
         let temp = tappe[index];
@@ -291,7 +286,6 @@
 
         if (tappe.length > 0) {
             masterToggle.style.display = 'flex';
-            // Verifica se tutte sono fatte per spuntare il checkbox principale
             document.getElementById('master-checkbox').checked = tappe.every(t => t.fatta);
         } else {
             masterToggle.style.display = 'none';
@@ -368,73 +362,83 @@
         }
     }
 
+    // --- NUOVO ALGORITMO A CATENA PER "MAPPA GPS" ---
     async function ottimizzaGiro() {
         if (tappe.length === 0) return alert("Aggiungi almeno una via!");
         if (!navigator.geolocation) return alert("GPS non supportato.");
 
         navigator.geolocation.getCurrentPosition(async (pos) => {
-            const userLat = pos.coords.latitude;
-            const userLng = pos.coords.longitude;
             await assegnaCoordinateMancanti();
-
-            tappe.sort((a, b) => {
-                if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
-                const distA = a.lat ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB = b.lat ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
-                return distA - distB;
-            });
+            
+            let tappeDaFare = tappe.filter(t => !t.fatta);
+            let tappeFatte = tappe.filter(t => t.fatta);
+            
+            let percorsoOttimizzato = [];
+            let currentLat = pos.coords.latitude;
+            let currentLng = pos.coords.longitude;
+            
+            while(tappeDaFare.length > 0) {
+                let nearestIndex = 0;
+                let minDist = 99999;
+                
+                for(let i = 0; i < tappeDaFare.length; i++) {
+                    let d = tappeDaFare[i].lat ? calcolaDistanza(currentLat, currentLng, tappeDaFare[i].lat, tappeDaFare[i].lng) : 99999;
+                    if(d < minDist) {
+                        minDist = d;
+                        nearestIndex = i;
+                    }
+                }
+                
+                let nextStop = tappeDaFare.splice(nearestIndex, 1)[0];
+                percorsoOttimizzato.push(nextStop);
+                
+                // Il nuovo punto di partenza diventa la tappa appena calcolata
+                if(nextStop.lat) {
+                    currentLat = nextStop.lat;
+                    currentLng = nextStop.lng;
+                }
+            }
+            
+            tappe = percorsoOttimizzato.concat(tappeFatte);
+            
             giroIniziato = false; salvaInLocalStorage(); render();
-            alert("Giro calcolato sulla distanza GPS!");
+            alert("Mappa GPS ricalcolata in successione logica a catena!");
         }, () => alert("Attiva il GPS!"));
     }
 
-    // 3. Ottimizzazione Specifica per Negozi
+    // --- NUOVO ALGORITMO A CATENA PER "PRECEDENZA NEGOZI" ---
     async function ottimizzaNegozi() {
         if (tappe.length === 0) return alert("Aggiungi almeno una via!");
         if (!navigator.geolocation) return alert("GPS non supportato.");
 
         navigator.geolocation.getCurrentPosition(async (pos) => {
-            const userLat = pos.coords.latitude;
-            const userLng = pos.coords.longitude;
             await assegnaCoordinateMancanti();
 
-            tappe.sort((a, b) => {
-                // Le tappe completate vanno sempre in fondo
-                if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
-                
-                // Priorità ASSOLUTA alle attività commerciali
-                if (a.isBusiness && !b.isBusiness) return -1;
-                if (!a.isBusiness && b.isBusiness) return 1;
-                
-                // Se sono entrambi negozi o entrambi privati, ordina per distanza
-                const distA = a.lat ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
-                const distB = b.lat ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
-                return distA - distB;
-            });
-            
-            giroIniziato = false; salvaInLocalStorage(); render();
-            alert("Ricalcolo effettuato: Le attività commerciali ora hanno la precedenza!");
-        }, () => alert("Attiva il GPS!"));
-    }
+            let tappeNegozi = tappe.filter(t => !t.fatta && t.isBusiness);
+            let tappePrivati = tappe.filter(t => !t.fatta && !t.isBusiness);
+            let tappeFatte = tappe.filter(t => t.fatta);
 
-    function avanziaGiro() {
-        const prossimoIndex = tappe.findIndex(t => !t.fatta);
-        if (prossimoIndex === -1) return alert("Tutto consegnato!");
-        giroIniziato = true;
-        apriNavigatore(prossimoIndex);
-    }
+            let percorsoOttimizzato = [];
+            let currentLat = pos.coords.latitude;
+            let currentLng = pos.coords.longitude;
 
-    function aggiornaPulsanteGuida() {
-        const btnGuided = document.getElementById('btn-guided');
-        if (tappe.length === 0) { btnGuided.style.display = 'none'; return; }
-        const prossimoIndex = tappe.findIndex(t => !t.fatta);
-        if (prossimoIndex === -1) {
-            btnGuided.style.display = 'block'; btnGuided.innerText = "🎉 GIRO COMPLETATO"; btnGuided.style.background = "#28a745";
-        } else if (giroIniziato) {
-            btnGuided.style.display = 'block'; btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`; btnGuided.style.background = "#ff9800";
-        } else {
-            btnGuided.style.display = 'block'; btnGuided.innerText = "🚀 INIZIA GIRO"; btnGuided.style.background = "#ff9800";
-        }
-    }
-</script>
-<
+            // 1. Collega tutti i negozi a catena
+            while(tappeNegozi.length > 0) {
+                let nearestIndex = 0; let minDist = 99999;
+                for(let i = 0; i < tappeNegozi.length; i++) {
+                    let d = tappeNegozi[i].lat ? calcolaDistanza(currentLat, currentLng, tappeNegozi[i].lat, tappeNegozi[i].lng) : 99999;
+                    if(d < minDist) { minDist = d; nearestIndex = i; }
+                }
+                let nextStop = tappeNegozi.splice(nearestIndex, 1)[0];
+                percorsoOttimizzato.push(nextStop);
+                if(nextStop.lat) { currentLat = nextStop.lat; currentLng = nextStop.lng; }
+            }
+
+            // 2. Continua la catena con i privati, ripartendo dalle coordinate dell'ultimo negozio consegnato
+            while(tappePrivati.length > 0) {
+                let nearestIndex = 0; let minDist = 99999;
+                for(let i = 0; i < tappePrivati.length; i++) {
+                    let d = tappePrivati[i].lat ? calcolaDistanza(currentLat, currentLng, tappePrivati[i].lat, tappePrivati[i].lng) : 99999;
+                    if(d < minDist) { minDist = d; nearestIndex = i; }
+                }
+              
