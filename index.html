@@ -38,7 +38,7 @@
     <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
 
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+    <input type="text" id="indirizzo" placeholder="Inizia a scrivere la via...">
 
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
@@ -66,13 +66,11 @@
             { componentRestrictions: { country: 'it' } }
         );
 
-        // VINCOLO RIGIDO: La via viene cercata SOLO ed ESCLUSIVAMENTE dentro il comune scelto
+        // Orienta la ricerca dell'indirizzo verso il comune selezionato in modo sicuro
         autocompleteComune.addListener('place_changed', () => {
             const place = autocompleteComune.getPlace();
-            if (place.geometry && place.geometry.viewport) {
-                autocompleteInd.setBounds(place.geometry.viewport);
-                autocompleteInd.setOptions({ strictBounds: true });
-                document.getElementById('indirizzo').placeholder = "Ora scrivi la via...";
+            if (place && place.geometry) {
+                autocompleteInd.setBounds(place.geometry.viewport || new google.maps.LatLngBounds(place.geometry.location));
             }
         });
     }
@@ -84,7 +82,7 @@
         const ind = document.getElementById('indirizzo').value.trim();
 
         if (!com || !ind) {
-            alert("Seleziona sia il comune che l'indirizzo dai suggerimenti!");
+            alert("Inserisci sia il comune che l'indirizzo!");
             return;
         }
 
@@ -115,6 +113,7 @@
     function rimuoviTappa(i) {
         tappe.splice(i, 1);
         render();
+        aggiornaPulsanteGuida();
     }
 
     function apriNavigatore(i) {
@@ -175,7 +174,6 @@
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
 
-            // Geocodifica asincrona reale di tutte le tappe prima del riordino
             for (let t of tappe) {
                 if (!t.lat || !t.lng) {
                     const coords = await geocodeAddress(t.indirizzo);
@@ -186,7 +184,6 @@
                 }
             }
 
-            // Ordinamento per reale distanza GPS
             tappe.sort((a, b) => {
                 if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
                 const distA = a.lat ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 9999;
