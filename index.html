@@ -3,151 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop - Gestione Consegne</title>
+    <title>EasyDrop - Navigazione</title>
     <style>
-        body { font-family: sans-serif; background: #f4f6f9; padding: 15px; margin: 0; }
+        body { font-family: sans-serif; background: #f4f6f9; padding: 15px; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; margin-top: 0; }
-        label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 12px; margin: 6px 0 12px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 16px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
-        .btn-optimize { background: #17a2b8; color: white; margin-top: 10px; }
-        .btn-save { background: #0056b3; color: white; margin-top: 15px; }
-        ul { padding-left: 0; list-style: none; margin-top: 15px; }
-        li { background: #f8f9fa; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        .btn-delete { background: #dc3545; color: white; padding: 6px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; }
+        .btn-nav { background: #ff9800; color: white; }
+        li { background: #fff; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>EasyDrop 📦</h2>
+    <input type="text" id="comune" placeholder="Comune">
+    <input type="text" id="indirizzo_input" placeholder="Indirizzo">
+    <button class="btn-add" onclick="aggiungi()">+ Aggiungi</button>
     
-    <label for="ditta">Ditta:</label>
-    <select id="ditta">
-        <option>SDA</option>
-        <option>BRT</option>
-        <option>Poste Italiane</option>
-        <option>GLS</option>
-    </select>
-
-    <label for="comune">Comune:</label>
-    <input type="text" id="comune" placeholder="Es. Sant'Arpino (CE)">
-
-    <label for="indirizzo_input">Indirizzo:</label>
-    <input type="text" id="indirizzo_input" placeholder="Es. Via Roma 1">
-    
-    <button type="button" class="btn-add" onclick="aggiungiTappa()">+ Aggiungi Indirizzo</button>
-    <button type="button" class="btn-optimize" onclick="rilevaGPS()">📍 Ottimizza (GPS)</button>
-
     <ul id="lista"></ul>
     
-    <button type="button" class="btn-save" onclick="salvaNelCloud()">🚀 Salva nel Cloud</button>
+    <button class="btn-nav" onclick="apriMappe()">🚀 Vai alla prossima consegna</button>
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://jfhejqhxtvhgfrjdfleq.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_9VhqQ9KOTrhqnMuZH9_L8Q_u7s5zEXh';
     let tappe = [];
 
-    function aggiungiTappa() {
-        const indInput = document.getElementById('indirizzo_input');
-        const comuneInput = document.getElementById('comune');
-        
-        const indirizzo = indInput.value.trim();
-        const comune = comuneInput.value.trim();
-
-        if (indirizzo === "") {
-            alert("Inserisci un indirizzo valido!");
-            return;
+    function aggiungi() {
+        const ind = document.getElementById('indirizzo_input').value;
+        const com = document.getElementById('comune').value;
+        if(ind) {
+            tappe.push(ind + ", " + com);
+            render();
+            document.getElementById('indirizzo_input').value = '';
         }
-
-        let tappaCompleta = indirizzo;
-        if (comune !== "") {
-            tappaCompleta += " (" + comune + ")";
-        }
-
-        tappe.push(tappaCompleta);
-        aggiornaLista();
-        indInput.value = '';
     }
 
-    function rimuoviTappa(index) {
-        tappe.splice(index, 1);
-        aggiornaLista();
-    }
-
-    function aggiornaLista() {
-        const listaEl = document.getElementById('lista');
-        listaEl.innerHTML = '';
-        
-        tappe.forEach((tappa, index) => {
-            listaEl.innerHTML += `
-                <li>
-                    <span>${index + 1}. ${tappa}</span>
-                    <button type="button" class="btn-delete" onclick="rimuoviTappa(${index})">X</button>
-                </li>`;
+    function render() {
+        const list = document.getElementById('lista');
+        list.innerHTML = '';
+        tappe.forEach((t, i) => {
+            list.innerHTML += `<li>${i+1}. ${t}</li>`;
         });
     }
 
-    function rilevaGPS() {
-        if (!navigator.geolocation) {
-            alert("La geolocalizzazione non è supportata dal tuo browser.");
-            return;
-        }
-
-        alert("Rilevamento posizione in corso...");
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                alert(`GPS OK! Posizione attuale:\nLat: ${lat.toFixed(4)}\nLon: ${lon.toFixed(4)}`);
-            },
-            (error) => {
-                alert("Impossibile rilevare la posizione. Controlla i permessi GPS del telefono.");
-            },
-            { enableHighAccuracy: true }
-        );
-    }
-
-    async function salvaNelCloud() {
+    function apriMappe() {
         if (tappe.length === 0) {
-            alert("Aggiungi almeno un indirizzo prima di salvare!");
+            alert("Nessuna consegna in lista!");
             return;
         }
-
-        const dittaVal = document.getElementById('ditta').value;
-        const comuneVal = document.getElementById('comune').value;
-        const indirizziTesto = tappe.join(" | ");
-
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/Consegne`, {
-                method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({
-                    ditta: dittaVal,
-                    comune: comuneVal,
-                    indirizzi: indirizziTesto
-                })
-            });
-
-            if (response.ok) {
-                alert("Giro salvato con successo nel database!");
-                tappe = [];
-                aggiornaLista();
-                document.getElementById('comune').value = '';
-            } else {
-                const errData = await response.json();
-                alert("Errore dal server: " + (errData.message || response.statusText));
-            }
-        } catch (error) {
-            alert("Errore di connessione: " + error.message);
+        // Prende il primo indirizzo della lista e apre Google Maps
+        const destinazione = encodeURIComponent(tappe[0]);
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destinazione}&travelmode=driving`, '_blank');
+        
+        // Chiede se vuoi rimuoverlo dalla lista
+        if (confirm("Sei partito? Una volta arrivato, clicca OK per rimuovere la consegna e passare alla prossima.")) {
+            tappe.shift(); // Rimuove il primo elemento
+            render();
         }
     }
 </script>
