@@ -3,12 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.2</title>
+    <title>EasyDrop PRO V 3.3</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
-        body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
-        .container { max-width: 480px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; margin-top: 0; }
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-container: #fff;
+            --text-main: #333;
+            --primary-color: #007bff;
+            --btn-add: #28a745;
+            --btn-opt: #17a2b8;
+            --btn-guided: #ff9800;
+        }
+
+        body { font-family: sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
+        .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; }
+        h2 { text-align: center; color: var(--text-main); margin-top: 0; }
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         select { padding-right: 12px; }
@@ -16,10 +26,10 @@
         .input-container { position: relative; }
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
-        .btn-add { background: #28a745; color: white; }
-        .btn-opt { background: #17a2b8; color: white; }
-        .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: background 0.3s ease; }
+        .btn-add { background: var(--btn-add); color: white; }
+        .btn-opt { background: var(--btn-opt); color: white; }
+        .btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         
         /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
@@ -29,7 +39,7 @@
         .btn-batch-highlight { background: #ffc107; color: #333; }
         .btn-batch-del { background: #dc3545; }
         
-        .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; cursor: pointer; }
+        .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid var(--primary-color); cursor: pointer; }
         .tappa-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
         .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
         .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
@@ -38,13 +48,14 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO V 3.2 📦</h2>
+    <h2>EasyDrop PRO V 3.3 📦</h2>
     <label>Ditta:</label>
-    <select id="ditta">
-        <option>SDA</option>
-        <option>BRT</option>
-        <option>Poste Italiane</option>
-        <option>GLS</option>
+    <select id="ditta" onchange="cambiaTemaDitta()">
+        <option value="SDA">SDA</option>
+        <option value="BRT">BRT</option>
+        <option value="Poste Italiane">Poste Italiane</option>
+        <option value="GLS">GLS</option>
+        <option value="DHL">DHL</option>
     </select>
     <label>Comune:</label>
     <div class="input-container">
@@ -80,6 +91,53 @@
     let autocompleteInd;
     let giroIniziato = false;
     let comuneSelezionato = "";
+
+    function cambiaTemaDitta() {
+        const ditta = document.getElementById('ditta').value;
+        const root = document.documentElement;
+
+        if (ditta === "SDA") {
+            // Blu e Giallo istituzionale SDA / Poste
+            root.style.setProperty('--bg-body', '#eef3f9');
+            root.style.setProperty('--primary-color', '#003366');
+            root.style.setProperty('--btn-add', '#003366');
+            root.style.setProperty('--btn-opt', '#d4af37');
+            root.style.setProperty('--btn-guided', '#003366');
+        } else if (ditta === "BRT") {
+            // Rosso Bartolini
+            root.style.setProperty('--bg-body', '#fcf2f2');
+            root.style.setProperty('--primary-color', '#cc0000');
+            root.style.setProperty('--btn-add', '#cc0000');
+            root.style.setProperty('--btn-opt', '#333333');
+            root.style.setProperty('--btn-guided', '#cc0000');
+        } else if (ditta === "Poste Italiane") {
+            // Giallo e Blu Poste
+            root.style.setProperty('--bg-body', '#fdfae5');
+            root.style.setProperty('--primary-color', '#004225');
+            root.style.setProperty('--btn-add', '#e6af00');
+            root.style.setProperty('--btn-opt', '#004225');
+            root.style.setProperty('--btn-guided', '#e6af00');
+        } else if (ditta === "GLS") {
+            // Rosso e Grigio/Blu GLS
+            root.style.setProperty('--bg-body', '#f7f4f4');
+            root.style.setProperty('--primary-color', '#002060');
+            root.style.setProperty('--btn-add', '#002060');
+            root.style.setProperty('--btn-opt', '#c00000');
+            root.style.setProperty('--btn-guided', '#002060');
+        } else if (ditta === "DHL") {
+            // Giallo e Rosso DHL
+            root.style.setProperty('--bg-body', '#fffbe6');
+            root.style.setProperty('--primary-color', '#d40511');
+            root.style.setProperty('--btn-add', '#d40511');
+            root.style.setProperty('--btn-opt', '#ffcc00');
+            root.style.setProperty('--btn-guided', '#d40511');
+        }
+    }
+
+    // Imposta il tema iniziale all'avvio
+    window.addEventListener('DOMContentLoaded', () => {
+        cambiaTemaDitta();
+    });
 
     function initAutocomplete() {
         try {
@@ -305,7 +363,7 @@
             giroIniziato = false;
             render();
             alert("Giro ottimizzato dalla tua posizione!");
-        }, (err) => { alert("Attiva il GPS!"); });
+        }, (err) => { alert("Attiva ilGPS!"); });
     }
 
     function avanziaGiro() {
@@ -320,8 +378,8 @@
         if (tappe.length === 0) { btnGuided.style.display = 'none'; return; }
         const prossimoIndex = tappe.findIndex(t => !t.fatta);
         if (prossimoIndex === -1) { btnGuided.style.display = 'block'; btnGuided.innerText = "🎉 GIRO COMPLETATO"; btnGuided.style.background = "#28a745"; }
-        else if (giroIniziato) { btnGuided.style.display = 'block'; btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`; btnGuided.style.background = "#ff9800"; }
-        else { btnGuided.style.display = 'block'; btnGuided.innerText = "🚀 INIZIA GIRO"; btnGuided.style.background = "#ff9800"; }
+        else if (giroIniziato) { btnGuided.style.display = 'block'; btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`; }
+        else { btnGuided.style.display = 'block'; btnGuided.innerText = "🚀 INIZIA GIRO"; }
     }
 </script>
 </body>
