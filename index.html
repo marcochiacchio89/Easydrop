@@ -3,37 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>EasyDrop PRO V 3.5</title>
 
-    <!--
-        GOOGLE MAPS
-        Sostituisci INSERISCI_LA_TUA_CHIAVE_API_QUI
-        con la tua vera API Key.
-    -->
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete"
-        async
-        defer>
-    </script>
+    <!-- GOOGLE MAPS -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
 
     <style>
         :root {
             --bg-body: #f4f6f9;
-            --bg-container: #ffffff;
-            --text-main: #333333;
+            --bg-container: #fff;
+            --text-main: #333;
             --primary-color: #007bff;
             --btn-add: #28a745;
             --btn-opt: #17a2b8;
             --btn-guided: #ff9800;
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: Arial, sans-serif;
+            font-family: sans-serif;
             background: var(--bg-body);
             margin: 0;
             padding: 15px;
@@ -85,7 +72,7 @@
             z-index: 1000;
             top: 0;
             right: 0;
-            background-color: #ffffff;
+            background-color: #fff;
             overflow-x: hidden;
             transition: 0.3s;
             box-shadow: -4px 0 10px rgba(0,0,0,0.2);
@@ -131,9 +118,11 @@
         select {
             width: 100%;
             padding: 12px;
+            padding-right: 35px;
             margin: 6px 0;
             border: 1px solid #ccc;
             border-radius: 6px;
+            box-sizing: border-box;
             font-size: 15px;
         }
 
@@ -148,10 +137,6 @@
 
         .input-container {
             position: relative;
-        }
-
-        .input-container input {
-            padding-right: 40px;
         }
 
         .clear-btn {
@@ -171,15 +156,9 @@
             color: #333;
         }
 
-        /* CAMERA */
-
-        .hidden-file {
-            opacity: 0;
-            width: 0.1px;
-            height: 0.1px;
-            position: absolute;
-            z-index: -1;
-        }
+        /* ================================
+           FOTOCAMERA LDV
+           ================================ */
 
         .camera-container {
             display: flex;
@@ -187,44 +166,55 @@
             gap: 10px;
             margin: 8px 0 12px 0;
             background: #f8f9fa;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
         }
 
-        .btn-camera {
+        .camera-input {
+            display: none;
+        }
+
+        .camera-button {
+            flex-shrink: 0;
+            width: 48px;
+            height: 42px;
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 7px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .camera-button:active {
+            transform: scale(0.94);
         }
 
         .camera-text {
             font-size: 13px;
             font-weight: 600;
             color: #555;
+            line-height: 1.3;
             margin: 0;
         }
 
-        /* OCR OVERLAY */
+        /* OVERLAY SCANSIONE */
 
         .ocr-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.75);
+            inset: 0;
+            background: rgba(0,0,0,0.78);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 2000;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .ocr-overlay.hidden {
@@ -232,18 +222,33 @@
         }
 
         .ocr-card {
-            background: #ffffff;
+            background: white;
             padding: 20px;
-            border-radius: 12px;
-            width: 85%;
+            border-radius: 14px;
+            width: 100%;
             max-width: 380px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+            box-sizing: border-box;
+        }
+
+        .ocr-title {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .ocr-subtitle {
+            font-size: 13px;
+            color: #666;
+            margin: 10px 0;
+            line-height: 1.4;
         }
 
         .preview-container {
             position: relative;
-            max-height: 220px;
+            width: 100%;
+            max-height: 260px;
             overflow: hidden;
             border-radius: 8px;
             margin: 15px 0;
@@ -251,10 +256,10 @@
         }
 
         .preview-container img {
-            width: 100%;
-            max-height: 220px;
-            object-fit: contain;
             display: block;
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
         }
 
         .scan-line {
@@ -264,8 +269,8 @@
             right: 0;
             height: 3px;
             background: #28a745;
-            box-shadow: 0 0 8px #28a745;
-            animation: scan 1.5s infinite ease-in-out;
+            box-shadow: 0 0 10px #28a745;
+            animation: scan 1.6s infinite ease-in-out;
         }
 
         @keyframes scan {
@@ -274,12 +279,30 @@
             }
 
             50% {
-                top: 95%;
+                top: 96%;
             }
 
             100% {
                 top: 0%;
             }
+        }
+
+        .scan-status {
+            font-size: 13px;
+            color: #28a745;
+            font-weight: bold;
+            margin: 5px 0 12px 0;
+        }
+
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+            padding: 11px;
+            border: none;
+            border-radius: 6px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         /* BUTTONS */
@@ -314,23 +337,6 @@
             box-shadow: 0 3px 6px rgba(0,0,0,0.2);
         }
 
-        .btn-cancel {
-            background: #dc3545;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            width: 100%;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
         /* BATCH */
 
         .batch-actions {
@@ -342,7 +348,6 @@
             background: #e9ecef;
             border-radius: 6px;
             font-size: 14px;
-            gap: 8px;
         }
 
         .batch-buttons {
@@ -385,14 +390,14 @@
             background: #f8f9fa;
             border-left: 5px solid var(--primary-color);
             cursor: pointer;
-            gap: 10px;
         }
 
         .tappa-left {
             display: flex;
-            flex-direction: column;
             align-items: flex-start;
+            gap: 10px;
             overflow: hidden;
+            flex-direction: column;
             width: 100%;
         }
 
@@ -403,24 +408,12 @@
             gap: 10px;
         }
 
-        .tappa-text input {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-            flex-shrink: 0;
-        }
-
-        .tappa-text span {
-            word-break: break-word;
-        }
-
         .tappa-note {
             font-size: 12px;
             color: #666;
             font-style: italic;
             margin-top: 4px;
             display: block;
-            word-break: break-word;
         }
 
         .evidenziata {
@@ -442,44 +435,6 @@
             padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        /* STATUS */
-
-        .status-box {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            background: #e9ecef;
-            font-size: 13px;
-            text-align: center;
-        }
-
-        .status-box.visible {
-            display: block;
-        }
-
-        /* MOBILE */
-
-        @media (max-width: 400px) {
-            .container {
-                padding: 15px;
-            }
-
-            .batch-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .batch-buttons {
-                justify-content: space-between;
-            }
-
-            .btn-batch {
-                flex: 1;
-            }
         }
     </style>
 </head>
@@ -488,38 +443,26 @@
 
 <div class="container">
 
+    <!-- HEADER -->
     <div class="app-header">
         <h2>EasyDrop PRO V 3.5 📦</h2>
-
-        <button
-            class="menu-btn"
-            type="button"
-            onclick="apriMenu()"
-            aria-label="Apri menu">
-            ☰
-        </button>
+        <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
-    <!-- MENU LATERALE -->
-
+    <!-- MENU -->
     <div id="sideMenu" class="side-menu">
 
-        <button
-            class="close-btn"
-            type="button"
-            onclick="chiudiMenu()">
-            &times;
-        </button>
+        <button class="close-btn" onclick="chiudiMenu()">&times;</button>
 
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Profilo in arrivo'); return false;">
+        <a href="#" onclick="chiudiMenu(); alert('Sezione Profilo in arrivo');">
             👤 Profilo
         </a>
 
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Impostazioni in arrivo'); return false;">
+        <a href="#" onclick="chiudiMenu(); alert('Sezione Impostazioni in arrivo');">
             ⚙️ Impostazioni
         </a>
 
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo'); return false;">
+        <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo');">
             🛠️ Assistenza
         </a>
 
@@ -527,7 +470,7 @@
 
     <!-- DITTA -->
 
-    <label for="ditta">Ditta:</label>
+    <label>Ditta:</label>
 
     <select id="ditta" onchange="cambiaTemaDitta()">
         <option value="SDA">SDA</option>
@@ -539,7 +482,7 @@
 
     <!-- COMUNE -->
 
-    <label for="comune">Comune:</label>
+    <label>Comune:</label>
 
     <div class="input-container">
 
@@ -547,11 +490,12 @@
             type="text"
             id="comune"
             placeholder="Inizia a scrivere il comune..."
-            autocomplete="off">
+        >
 
         <span
             class="clear-btn"
-            onclick="pulisciCampo('comune')">
+            onclick="pulisciCampo('comune')"
+        >
             &times;
         </span>
 
@@ -559,7 +503,7 @@
 
     <!-- INDIRIZZO -->
 
-    <label for="indirizzo">Indirizzo:</label>
+    <label>Indirizzo:</label>
 
     <div class="input-container">
 
@@ -568,95 +512,97 @@
             id="indirizzo"
             placeholder="Seleziona prima il comune..."
             disabled
-            autocomplete="off">
+        >
 
         <span
             class="clear-btn"
-            onclick="pulisciCampo('indirizzo')">
+            onclick="pulisciCampo('indirizzo')"
+        >
             &times;
         </span>
 
     </div>
 
-    <!-- FOTOCAMERA -->
+    <!-- ==========================
+         FOTOCAMERA LDV
+         ========================== -->
 
     <div class="camera-container">
 
         <input
             type="file"
             id="cameraInput"
-            class="hidden-file"
+            class="camera-input"
             accept="image/*"
             capture="environment"
-            onchange="gestisciFotoLDV(event)">
+            onchange="gestisciFotoLDV(event)"
+        >
 
         <label
             for="cameraInput"
-            class="btn-camera"
-            title="Scatta foto LDV">
+            class="camera-button"
+            title="Scatta foto LDV"
+        >
             📷
         </label>
 
-        <span class="camera-text">
-            Usa la fotocamera per identificare l'indirizzo
-        </span>
+        <p class="camera-text">
+            Usa la fotocamera per inserire automaticamente l'indirizzo
+        </p>
 
     </div>
 
     <!-- NOTE -->
 
-    <label for="note">
-        Note (facoltativo):
-    </label>
+    <label>Note (facoltativo):</label>
 
     <input
         type="text"
         id="note"
-        placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
+        placeholder="es. Citofono Rossi, ZTL, Pacco blu..."
+    >
 
-    <!-- AZIONI -->
+    <!-- BUTTONS -->
 
     <button
         class="btn btn-add"
-        type="button"
-        onclick="aggiungiTappa()">
+        onclick="aggiungiTappa()"
+    >
         + Aggiungi Tappa
     </button>
 
     <button
         class="btn btn-opt"
-        id="btn-opt"
-        type="button"
-        onclick="ottimizzaGiro()">
+        onclick="ottimizzaGiro()"
+    >
         📍 Ottimizza Giro (GPS)
     </button>
 
     <button
         id="btn-guided"
         class="btn btn-guided"
-        type="button"
-        onclick="avanzaGiro()">
+        onclick="avanzaiGiro()"
+    >
         🚀 INIZIA GIRO
     </button>
 
-    <!-- STATO -->
-
-    <div id="statusBox" class="status-box"></div>
-
-    <!-- SELEZIONE MULTIPLA -->
+    <!-- BATCH -->
 
     <div
         id="batch-bar"
+        style="display:none;"
         class="batch-actions"
-        style="display:none;">
+    >
 
         <label
-            style="margin:0; display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
+            style="margin:0; display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;"
+        >
 
             <input
                 type="checkbox"
                 id="seleziona-tutti"
-                onclick="toggleSelezionaTutti(this)">
+                onclick="toggleSelezionaTutti(this)"
+            >
 
             Tutti
 
@@ -666,22 +612,22 @@
 
             <button
                 class="btn-batch btn-batch-done"
-                type="button"
-                onclick="toggleFattaSelezionate()">
+                onclick="toggleFattaSelezionate()"
+            >
                 ✅ Fatta
             </button>
 
             <button
                 class="btn-batch btn-batch-highlight"
-                type="button"
-                onclick="toggleEvidenziaSelezionate()">
+                onclick="toggleEvidenziaSelezionate()"
+            >
                 🟡 Evidenzia
             </button>
 
             <button
                 class="btn-batch btn-batch-del"
-                type="button"
-                onclick="eliminaSelezionate()">
+                onclick="eliminaSelezionate()"
+            >
                 🗑 Elimina
             </button>
 
@@ -689,48 +635,57 @@
 
     </div>
 
-    <!-- LISTA -->
+    <!-- LISTA TAPPE -->
 
     <div
         id="lista"
-        style="margin-top:15px;">
-    </div>
+        style="margin-top: 15px;"
+    ></div>
 
 </div>
 
 
-<!-- MODAL SCANSIONE -->
+<!-- ==========================
+     MODALE FOTOCAMERA / SCANSIONE
+     ========================== -->
 
 <div
     id="ocrOverlay"
-    class="ocr-overlay hidden">
+    class="ocr-overlay hidden"
+>
 
     <div class="ocr-card">
 
-        <h4 style="margin:0 0 10px 0; color:#333;">
-            Scansione LDV in corso...
-        </h4>
+        <h3 class="ocr-title">
+            📦 Lettura LDV
+        </h3>
 
         <div class="preview-container">
 
             <img
                 id="ldvPreview"
                 src=""
-                alt="Anteprima LDV">
+                alt="Anteprima LDV"
+            >
 
             <div class="scan-line"></div>
 
         </div>
 
-        <p
-            style="font-size:13px; color:#666; margin-bottom:10px;">
-            Anteprima della foto. Il riconoscimento automatico OCR può essere collegato successivamente.
+        <div class="scan-status">
+            🔍 Analisi dell'immagine...
+        </div>
+
+        <p class="ocr-subtitle">
+            Questa schermata è attualmente una simulazione visiva.
+            In una fase successiva collegheremo qui l'IA per leggere
+            automaticamente l'indirizzo presente sulla LDV.
         </p>
 
         <button
             class="btn-cancel"
-            type="button"
-            onclick="annullaScansione()">
+            onclick="annullaScansione()"
+        >
             Annulla
         </button>
 
@@ -741,140 +696,191 @@
 
 <script>
 
-    /* =========================================================
+    /* ==========================================
        VARIABILI PRINCIPALI
-    ========================================================= */
+       ========================================== */
 
     let tappe = [];
 
-    let geocoder = null;
+    let geocoder;
 
-    let autocompleteComune = null;
+    let autocompleteComune;
 
-    let autocompleteInd = null;
+    let autocompleteInd;
+
+    let giroIniziato = false;
 
     let comuneSelezionato = "";
 
-    let mapsPronto = false;
 
-    let indiceGiro = 0;
-
-    let ottimizzazioneInCorso = false;
-
-
-    /* =========================================================
+    /* ==========================================
        MENU
-    ========================================================= */
+       ========================================== */
 
     function apriMenu() {
 
-        const menu = document.getElementById("sideMenu");
-
-        if (menu) {
-            menu.style.width = "250px";
-        }
+        document.getElementById("sideMenu").style.width = "250px";
 
     }
 
 
     function chiudiMenu() {
 
-        const menu = document.getElementById("sideMenu");
-
-        if (menu) {
-            menu.style.width = "0";
-        }
+        document.getElementById("sideMenu").style.width = "0";
 
     }
 
 
-    /* =========================================================
+    /* ==========================================
        TEMA DITTA
-    ========================================================= */
+       ========================================== */
 
     function cambiaTemaDitta() {
 
-        const dittaElement = document.getElementById("ditta");
+        const ditta =
+            document.getElementById('ditta').value;
 
-        if (!dittaElement) return;
-
-        const ditta = dittaElement.value;
-
-        const root = document.documentElement;
+        const root =
+            document.documentElement;
 
 
         if (ditta === "SDA") {
 
-            root.style.setProperty("--bg-body", "#eef3f9");
-            root.style.setProperty("--primary-color", "#003366");
-            root.style.setProperty("--btn-add", "#003366");
-            root.style.setProperty("--btn-opt", "#d4af37");
-            root.style.setProperty("--btn-guided", "#003366");
+            root.style.setProperty('--bg-body', '#eef3f9');
+
+            root.style.setProperty('--primary-color', '#003366');
+
+            root.style.setProperty('--btn-add', '#003366');
+
+            root.style.setProperty('--btn-opt', '#d4af37');
+
+            root.style.setProperty('--btn-guided', '#003366');
 
         }
 
         else if (ditta === "BRT") {
 
-            root.style.setProperty("--bg-body", "#fcf2f2");
-            root.style.setProperty("--primary-color", "#cc0000");
-            root.style.setProperty("--btn-add", "#cc0000");
-            root.style.setProperty("--btn-opt", "#333333");
-            root.style.setProperty("--btn-guided", "#cc0000");
+            root.style.setProperty('--bg-body', '#fcf2f2');
+
+            root.style.setProperty('--primary-color', '#cc0000');
+
+            root.style.setProperty('--btn-add', '#cc0000');
+
+            root.style.setProperty('--btn-opt', '#333333');
+
+            root.style.setProperty('--btn-guided', '#cc0000');
 
         }
 
         else if (ditta === "Poste Italiane") {
 
-            root.style.setProperty("--bg-body", "#fdfae5");
-            root.style.setProperty("--primary-color", "#004225");
-            root.style.setProperty("--btn-add", "#e6af00");
-            root.style.setProperty("--btn-opt", "#004225");
-            root.style.setProperty("--btn-guided", "#e6af00");
+            root.style.setProperty('--bg-body', '#fdfae5');
+
+            root.style.setProperty('--primary-color', '#004225');
+
+            root.style.setProperty('--btn-add', '#e6af00');
+
+            root.style.setProperty('--btn-opt', '#004225');
+
+            root.style.setProperty('--btn-guided', '#e6af00');
 
         }
 
         else if (ditta === "GLS") {
 
-            root.style.setProperty("--bg-body", "#f7f4f4");
-            root.style.setProperty("--primary-color", "#002060");
-            root.style.setProperty("--btn-add", "#002060");
-            root.style.setProperty("--btn-opt", "#c00000");
-            root.style.setProperty("--btn-guided", "#002060");
+            root.style.setProperty('--bg-body', '#f7f4f4');
+
+            root.style.setProperty('--primary-color', '#002060');
+
+            root.style.setProperty('--btn-add', '#002060');
+
+            root.style.setProperty('--btn-opt', '#c00000');
+
+            root.style.setProperty('--btn-guided', '#002060');
 
         }
 
         else if (ditta === "DHL") {
 
-            root.style.setProperty("--bg-body", "#fffbe6");
-            root.style.setProperty("--primary-color", "#d40511");
-            root.style.setProperty("--btn-add", "#d40511");
-            root.style.setProperty("--btn-opt", "#ffcc00");
-            root.style.setProperty("--btn-guided", "#d40511");
+            root.style.setProperty('--bg-body', '#fffbe6');
+
+            root.style.setProperty('--primary-color', '#d40511');
+
+            root.style.setProperty('--btn-add', '#d40511');
+
+            root.style.setProperty('--btn-opt', '#ffcc00');
+
+            root.style.setProperty('--btn-guided', '#d40511');
 
         }
 
     }
 
 
-    /* =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
+
+        cambiaTemaDitta();
+
+    });
+
+
+    /* ==========================================
        GOOGLE MAPS / AUTOCOMPLETE
-    ========================================================= */
+       ========================================== */
 
     function initAutocomplete() {
 
         try {
 
-            if (
-                typeof google === "undefined" ||
-                !google.maps ||
-                !google.maps.places
-            ) {
+            geocoder =
+                new google.maps.Geocoder();
 
-                console.error("Google Maps non disponibile.");
 
-                mostraStato(
-                    "⚠️ Google Maps non è disponibile. Controlla la API Key.",
-                    true
+            autocompleteComune =
+                new google.maps.places.Autocomplete(
+                    document.getElementById('comune'),
+                    {
+                        types: ['locality'],
+                        componentRestrictions: {
+                            country: 'it'
+                        }
+                    }
                 );
 
-    
+
+            autocompleteInd =
+                new google.maps.places.Autocomplete(
+                    document.getElementById('indirizzo'),
+                    {
+                        componentRestrictions: {
+                            country: 'it'
+                        }
+                    }
+                );
+
+
+            autocompleteComune.addListener(
+                'place_changed',
+                function() {
+
+                    const place =
+                        autocompleteComune.getPlace();
+
+                    const indInput =
+                        document.getElementById('indirizzo');
+
+
+                    if (
+                        place &&
+                        place.geometry &&
+                        place.geometry.viewport
+                    ) {
+
+                        comuneSelezionato =
+                            place.name ||
+                            document.getElementById('comune').value;
+
+
+                        autocompleteInd.setBounds(
+                            place.geometry.viewport
+          
