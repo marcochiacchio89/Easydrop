@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.5</title>
+    <title>EasyDrop PRO v2.6</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
@@ -48,7 +48,7 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.5</h2>
+    <h2>EasyDrop PRO 📦 v2.6</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -125,7 +125,7 @@
         });
 
         document.addEventListener('click', function(event) {
-            if (event.target.id !== 'indirizzo') {
+            if (event.target.id !== 'indirizzo' && !event.target.closest('#indirizzo-suggerimenti')) {
                 document.getElementById('indirizzo-suggerimenti').style.display = 'none';
             }
         });
@@ -168,23 +168,25 @@
                     document.getElementById('indirizzo').value = p.structured_formatting.main_text;
                     suggerimentiBox.style.display = 'none';
                     
-                    try {
-                        placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
-                            if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
-                                if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
-                                    tempIsBusiness = true;
-                                    if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
-                                        let todayIndex = (new Date().getDay() + 6) % 7; 
-                                        let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
-                                        if(stringaOggi) {
-                                            tempOrari = stringaOggi.split(': ')[1];
+                    if (placesService && p.place_id) {
+                        try {
+                            placesService.getDetails({ placeId: p.place_id, fields: ['types', 'opening_hours'] }, function(placeDetails, statusDetails) {
+                                if (statusDetails === google.maps.places.PlacesServiceStatus.OK && placeDetails) {
+                                    if (placeDetails.types && (placeDetails.types.includes('establishment') || placeDetails.types.includes('store'))) {
+                                        tempIsBusiness = true;
+                                        if (placeDetails.opening_hours && placeDetails.opening_hours.weekday_text) {
+                                            let todayIndex = (new Date().getDay() + 6) % 7; 
+                                            let stringaOggi = placeDetails.opening_hours.weekday_text[todayIndex];
+                                            if(stringaOggi) {
+                                                tempOrari = stringaOggi.split(': ')[1];
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        });
-                    } catch (err) {
-                        console.log("Dettagli negozio non disponibili");
+                            });
+                        } catch (e) {
+                            console.log("Dettagli non disponibili");
+                        }
                     }
                 };
                 suggerimentiBox.appendChild(div);
@@ -205,11 +207,11 @@
     }
 
     function salvaInLocalStorage() {
-        localStorage.setItem('easydrop_tappe_v3', JSON.stringify(tappe));
+        localStorage.setItem('easydrop_tappe_v4', JSON.stringify(tappe));
     }
 
     function caricaDaLocalStorage() {
-        const dati = localStorage.getItem('easydrop_tappe_v3');
+        const dati = localStorage.getItem('easydrop_tappe_v4');
         if (dati) {
             try { tappe = JSON.parse(dati); } catch (e) { tappe = []; }
         }
@@ -264,21 +266,6 @@
         let temp = tappe[index];
         tappe[index] = tappe[index + direzione];
         tappe[index + direzione] = temp;
-        salvaInLocalStorage();
-        render();
-    }
-
-    function modificaTappa(i) {
-        const nuovoIndirizzo = prompt("Modifica Indirizzo e Comune:", tappe[i].indirizzo);
-        if (nuovoIndirizzo === null) return;
-        const nuoveNote = prompt("Modifica Note:", tappe[i].note || "");
-        if (nuoveNote === null) return;
-
-        tappe[i].indirizzo = nuovoIndirizzo.trim();
-        tappe[i].note = nuoveNote.trim();
-        tappe[i].lat = null;
-        tappe[i].lng = null;
-
         salvaInLocalStorage();
         render();
     }
@@ -349,10 +336,16 @@
 
     function geocodeAddress(address) {
         return new Promise((resolve) => {
+            if (!geocoder) {
+                resolve(null);
+                return;
+            }
             geocoder.geocode({ address: address }, (results, status) => {
                 if (status === 'OK' && results && results[0]) {
                     resolve({ lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() });
-                } else resolve(null);
+                } else {
+                    resolve(null);
+                }
             });
         });
     }
@@ -361,7 +354,10 @@
         for (let t of tappe) {
             if (t.lat === null || t.lng === null) {
                 const coords = await geocodeAddress(t.indirizzo);
-                if (coords) { t.lat = coords.lat; t.lng = coords.lng; }
+                if (coords) { 
+                    t.lat = coords.lat; 
+                    t.lng = coords.lng; 
+                }
             }
         }
     }
@@ -402,10 +398,11 @@
             }
             
             tappe = percorsoOttimizzato.concat(tappeFatte);
-            
-            giroIniziato = false; salvaInLocalStorage(); render();
-            alert("Mappa GPS ricalcolata in successione logica a catena!");
-        }, () => alert("Attiva il GPS!"));
+            giroIniziato = false; 
+            salvaInLocalStorage(); 
+            render();
+            alert("Mappa GPS ricalcolata in successione logica!");
+        }, () => alert("Attiva il GPS per ottimizzare il giro!"));
     }
 
     async function ottimizzaNegozi() {
@@ -442,4 +439,7 @@
                 }
                 let nextStop = tappePrivati.splice(nearestIndex, 1)[0];
                 percorsoOttimizzato.push(nextStop);
-                if(nextStop.lat) { cur
+                if(nextStop.lat) { currentLat = nextStop.lat; currentLng = nextStop.lng; }
+            }
+
+       
