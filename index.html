@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO v2.1</title>
+    <title>EasyDrop PRO v2.2</title>
     <!-- Caricamento Google Maps e Places API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
@@ -12,11 +12,17 @@
         h2 { text-align: center; color: #333; margin-top: 0; }
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
         
-        /* Contenitore input con tasto di pulizia 'X' */
+        /* Contenitori Input */
         .input-group { position: relative; display: flex; align-items: center; }
         .input-group input { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         .btn-clear { position: absolute; right: 10px; background: #e0e0e0; border: none; border-radius: 50%; width: 22px; height: 22px; font-weight: bold; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
         
+        /* Menu a tendina personalizzato per le Vie */
+        .suggerimenti-box { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 0 0 6px 6px; z-index: 1000; max-height: 220px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; }
+        .suggerimento-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; color: #333; }
+        .suggerimento-item:hover { background: #f0f8ff; }
+        .suggerimento-item:last-child { border-bottom: none; }
+
         select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
@@ -37,7 +43,7 @@
 </head>
 <body>
 <div class="container">
-    <h2>EasyDrop PRO 📦 v2.1</h2>
+    <h2>EasyDrop PRO 📦 v2.2</h2>
     
     <label>Ditta:</label>
     <select id="ditta">
@@ -55,8 +61,11 @@
 
     <label>Indirizzo:</label>
     <div class="input-group">
-        <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
+        <!-- Input modificato per attivare la ricerca vie personalizzata -->
+        <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." autocomplete="off" oninput="cercaVie()">
         <button class="btn-clear" onclick="pulisciCampo('indirizzo')">✕</button>
+        <!-- Box invisibile che conterrà i suggerimenti bloccati al comune -->
+        <div id="indirizzo-suggerimenti" class="suggerimenti-box"></div>
     </div>
 
     <label>Note (facoltativo):</label>
@@ -76,33 +85,31 @@
     let tappe = [];
     let geocoder;
     let autocompleteComune;
-    let autocompleteInd;
+    let autocompleteService; // Nuovo servizio di ricerca manuale
     let giroIniziato = false;
 
     function initAutocomplete() {
         geocoder = new google.maps.Geocoder();
+        autocompleteService = new google.maps.places.AutocompleteService();
         
         autocompleteComune = new google.maps.places.Autocomplete(
             document.getElementById('comune'), 
             { types: ['(cities)'], componentRestrictions: { country: 'it' } }
         );
         
-        autocompleteInd = new google.maps.places.Autocomplete(
-            document.getElementById('indirizzo'), 
-            { componentRestrictions: { country: 'it' } }
-        );
-
-        // 1. BLOCCO RIGIDO SUL COMUNE SELEZIONATO (strictBounds = true)
         autocompleteComune.addListener('place_changed', function() {
             const place = autocompleteComune.getPlace();
-            if (place && place.geometry && place.geometry.viewport) {
-                // Imposta i confini esatti del comune scelto
-                autocompleteInd.setBounds(place.geometry.viewport);
-                // ATTIVA IL BLOCCO RIGIDO: suggerimenti limitati SOLO alle vie di questo comune
-                autocompleteInd.setOptions({ strictBounds: true });
-                
+            if (place && place.name) {
                 document.getElementById('indirizzo').value = '';
-                document.getElementById('indirizzo').placeholder = "Via a " + place.name;
+                document.getElementById('indirizzo').placeholder = "Cerca via a " + place.name + "...";
+                document.getElementById('indirizzo-suggerimenti').style.display = 'none';
+            }
+        });
+
+        // Nascondi il menu delle vie se l'utente clicca fuori
+        document.addEventListener('click', function(event) {
+            if (event.target.id !== 'indirizzo') {
+                document.getElementById('indirizzo-suggerimenti').style.display = 'none';
             }
         });
 
@@ -110,12 +117,57 @@
         render();
     }
 
+    // 1. RICERCA VIE RIGIDAMENTE BLOCCATA SUL COMUNE
+    function cercaVie() {
+        const inputVia = document.getElementById('indirizzo').value;
+        const nomeComune = document.getElementById('comune').value;
+        const suggerimentiBox = document.getElementById('indirizzo-suggerimenti');
+
+        // Mostra i suggerimenti solo se l'utente ha digitato almeno 2 lettere
+        if (inputVia.length < 2 || !nomeComune) {
+            suggerimentiBox.style.display = 'none';
+            return;
+        }
+
+        // Il trucco: costringiamo Google a cercare "La Via Inserita + Il Comune"
+        const queryForte = inputVia + ", " + nomeComune;
+
+        autocompleteService.getPlacePredictions({
+            input: queryForte,
+            componentRestrictions: { country: 'it' }
+        }, function(predictions, status) {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
+                suggerimentiBox.style.display = 'none';
+                return;
+            }
+
+            suggerimentiBox.innerHTML = '';
+            predictions.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'suggerimento-item';
+                div.innerHTML = p.description; // Mostra l'indirizzo intero suggerito
+                
+                // Seleziona la via cliccata
+                div.onclick = function() {
+                    // Inserisce nel campo Indirizzo solo la via senza ripetere il comune (es. "Via Roma, 10")
+                    document.getElementById('indirizzo').value = p.structured_formatting.main_text;
+                    suggerimentiBox.style.display = 'none';
+                };
+                suggerimentiBox.appendChild(div);
+            });
+            suggerimentiBox.style.display = 'block';
+        });
+    }
+
     function pulisciCampo(id) {
         document.getElementById(id).value = '';
         if (id === 'comune') {
             document.getElementById('indirizzo').value = '';
             document.getElementById('indirizzo').placeholder = "Seleziona prima il comune...";
-            autocompleteInd.setOptions({ strictBounds: false });
+            document.getElementById('indirizzo-suggerimenti').style.display = 'none';
+        }
+        if (id === 'indirizzo') {
+            document.getElementById('indirizzo-suggerimenti').style.display = 'none';
         }
     }
 
@@ -142,30 +194,22 @@
 
         const indirizzoCompleto = `${ind}, ${com}`;
         
-        let lat = null;
-        let lng = null;
-        const place = autocompleteInd.getPlace();
-        if (place && place.geometry && place.geometry.location) {
-            lat = place.geometry.location.lat();
-            lng = place.geometry.location.lng();
-        }
-
         tappe.push({
             indirizzo: indirizzoCompleto,
             note: note,
             cliccata: false,
             fatta: false,
-            lat: lat,
-            lng: lng
+            lat: null, // Si calcolerà da solo tramite Geocode in fase di ottimizzazione
+            lng: null
         });
         
         document.getElementById('indirizzo').value = '';
         document.getElementById('note').value = '';
+        document.getElementById('indirizzo-suggerimenti').style.display = 'none';
         salvaInLocalStorage();
         render();
     }
 
-    // 2. SPUNTA MANUALE (FATTA / NON FATTA)
     function toggleFatta(i) {
         tappe[i].fatta = !tappe[i].fatta;
         salvaInLocalStorage();
