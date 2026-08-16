@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyDrop - Corrieri</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; text-align: center; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        select, input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: #0056b3; color: white; border: none; padding: 14px; margin-top: 20px; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:active { background: #004085; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>EasyDrop 📦</h2>
+    
+    <label for="ditta">Seleziona la tua Ditta:</label>
+    <select id="ditta">
+        <option value="SDA">SDA</option>
+        <option value="Poste Italiane">Poste Italiane</option>
+        <option value="Bartolini">Bartolini (BRT)</option>
+        <option value="GLS">GLS</option>
+        <option value="UPS">UPS</option>
+        <option value="DHL">DHL</option>
+        <option value="FedEx">FedEx</option>
+    </select>
+
+    <label for="comune">Comune:</label>
+    <input type="text" id="comune" placeholder="Es. Sant'Arpino">
+
+    <label for="cap">CAP:</label>
+    <input type="text" id="cap" placeholder="Es. 81030">
+
+    <label for="consegne">Incolla Indirizzi Consegne:</label>
+    <textarea id="consegne" rows="5" placeholder="Inserisci le consegne della giornata..."></textarea>
+
+    <button onclick="avviaGiro()">Ottimizza Giro</button>
+</div>
+
+<script>
+    function avviaGiro() {
+        const ditta = document.getElementById('ditta').value;
+        const comune = document.getElementById('comune').value;
+        const cap = document.getElementById('cap').value;
+        
+        if(!comune || !cap) {
+            alert("Inserisci Comune e CAP per verificare i ritiri fissi della zona!");
+            return;
+        }
+        
+        alert(`Connessione al database per ${ditta} a ${comune} (${cap})... Caricamento alert e ritiri fissi.`);
+    }
+</script>
+
+</body>
+</html>
