@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.6</title>
+    <title>EasyDrop PRO V 3.6.1</title>
+    <!-- SOSTITUISCI LA TUA CHIAVE API QUI SOTTO -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <style>
         :root {
@@ -19,13 +20,11 @@
         body { font-family: sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
         .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; }
         
-        /* Header con Titolo e Menu Hamburger */
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; }
         .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 0 5px; }
         
-        /* Menu Hamburger Laterale */
-        .side-menu { height: 100%; width: 0; position: fixed; z-index: 1000; top: 0; right: 0; background-color: #fff; overflow-x: hidden; transition: 0.3s; box-shadow: -4px 0 10px rgba(0,0,0,0.2); padding-top: 60px; }
+        .side-menu { height: 100%; width: 0; position: fixed; z-index: 2000; top: 0; right: 0; background-color: #fff; overflow-x: hidden; transition: 0.3s; box-shadow: -4px 0 10px rgba(0,0,0,0.2); padding-top: 60px; }
         .side-menu a { padding: 12px 20px; text-decoration: none; font-size: 16px; color: #333; display: block; transition: 0.2s; border-bottom: 1px solid #eee; }
         .side-menu a:hover { background-color: #f1f1f1; color: var(--primary-color); }
         .side-menu .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; border: none; background: none; cursor: pointer; }
@@ -33,12 +32,14 @@
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         select { padding-right: 12px; }
-        input:disabled { background-color: #e9ecef; cursor: not-allowed; }
+        input:disabled { background-color: #e9ecef; cursor: not-allowed; border-color: #ddd; color: #888; }
         .input-container { position: relative; }
         .clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; padding: 0 5px; user-select: none; }
         .clear-btn:hover { color: #333; }
         
-        /* Box Orari Negozio */
+        /* FIX FONDAMENTALE: Forza il menù a tendina di Google in primissimo piano */
+        .pac-container { z-index: 10000 !important; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-family: sans-serif; }
+
         .orari-box { font-size: 12px; color: #444; margin-top: 6px; display: none; background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px solid #ddd; line-height: 1.4; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; transition: background 0.3s ease; }
@@ -46,7 +47,6 @@
         .btn-opt { background: var(--btn-opt); color: white; }
         .btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         
-        /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
         .batch-buttons { display: flex; gap: 4px; }
         .btn-batch { border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; color: white; }
@@ -66,11 +66,10 @@
 <body>
 <div class="container">
     <div class="app-header">
-        <h2>EasyDrop PRO V 3.6 📦</h2>
+        <h2>EasyDrop PRO V 3.6.1 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
-    <!-- Menu Hamburger Laterale -->
     <div id="sideMenu" class="side-menu">
         <button class="close-btn" onclick="chiudiMenu()">&times;</button>
         <a href="#" onclick="chiudiMenu(); alert('Sezione Profilo in arrivo');">👤 Profilo</a>
@@ -86,11 +85,13 @@
         <option value="GLS">GLS</option>
         <option value="DHL">DHL</option>
     </select>
+    
     <label>Comune:</label>
     <div class="input-container">
         <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
         <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
     </div>
+    
     <label>Indirizzo:</label>
     <div class="input-container">
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
@@ -103,7 +104,7 @@
     
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
-    <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
+    <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button> <!-- Corretto refuso -->
     
     <div id="batch-bar" style="display:none;" class="batch-actions">
         <label style="margin:0; display:flex; align-items:center; gap:4px; cursor:pointer; font-size:13px;">
@@ -118,6 +119,7 @@
 
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
+
 <script>
     let tappe = [];
     let geocoder;
@@ -125,101 +127,82 @@
     let autocompleteInd;
     let comuneSelezionato = "";
 
-    function apriMenu() {
-        document.getElementById("sideMenu").style.width = "250px";
-    }
-
-    function chiudiMenu() {
-        document.getElementById("sideMenu").style.width = "0";
-    }
+    function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
+    function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
 
     function cambiaTemaDitta() {
         const ditta = document.getElementById('ditta').value;
         const root = document.documentElement;
-
-        if (ditta === "SDA") {
-            root.style.setProperty('--bg-body', '#eef3f9');
-            root.style.setProperty('--primary-color', '#003366');
-            root.style.setProperty('--btn-add', '#003366');
-            root.style.setProperty('--btn-opt', '#d4af37');
-            root.style.setProperty('--btn-guided', '#003366');
-        } else if (ditta === "BRT") {
-            root.style.setProperty('--bg-body', '#fcf2f2');
-            root.style.setProperty('--primary-color', '#cc0000');
-            root.style.setProperty('--btn-add', '#cc0000');
-            root.style.setProperty('--btn-opt', '#333333');
-            root.style.setProperty('--btn-guided', '#cc0000');
-        } else if (ditta === "Poste Italiane") {
-            root.style.setProperty('--bg-body', '#fdfae5');
-            root.style.setProperty('--primary-color', '#004225');
-            root.style.setProperty('--btn-add', '#e6af00');
-            root.style.setProperty('--btn-opt', '#004225');
-            root.style.setProperty('--btn-guided', '#e6af00');
-        } else if (ditta === "GLS") {
-            root.style.setProperty('--bg-body', '#f7f4f4');
-            root.style.setProperty('--primary-color', '#002060');
-            root.style.setProperty('--btn-add', '#002060');
-            root.style.setProperty('--btn-opt', '#c00000');
-            root.style.setProperty('--btn-guided', '#002060');
-        } else if (ditta === "DHL") {
-            root.style.setProperty('--bg-body', '#fffbe6');
-            root.style.setProperty('--primary-color', '#d40511');
-            root.style.setProperty('--btn-add', '#d40511');
-            root.style.setProperty('--btn-opt', '#ffcc00');
-            root.style.setProperty('--btn-guided', '#d40511');
-        }
+        const temi = {
+            "SDA": { bg: '#eef3f9', p: '#003366', add: '#003366', opt: '#d4af37' },
+            "BRT": { bg: '#fcf2f2', p: '#cc0000', add: '#cc0000', opt: '#333333' },
+            "Poste Italiane": { bg: '#fdfae5', p: '#004225', add: '#e6af00', opt: '#004225' },
+            "GLS": { bg: '#f7f4f4', p: '#002060', add: '#002060', opt: '#c00000' },
+            "DHL": { bg: '#fffbe6', p: '#d40511', add: '#d40511', opt: '#ffcc00' }
+        };
+        const t = temi[ditta];
+        root.style.setProperty('--bg-body', t.bg);
+        root.style.setProperty('--primary-color', t.p);
+        root.style.setProperty('--btn-add', t.add);
+        root.style.setProperty('--btn-opt', t.opt);
+        root.style.setProperty('--btn-guided', t.p);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        cambiaTemaDitta();
-    });
+    window.addEventListener('DOMContentLoaded', () => { cambiaTemaDitta(); });
 
+    // Funzione Google Maps Blindata con try-catch isolati
     function initAutocomplete() {
         try {
             geocoder = new google.maps.Geocoder();
-            
             const inputComune = document.getElementById('comune');
             const inputIndirizzo = document.getElementById('indirizzo');
 
-            autocompleteComune = new google.maps.places.Autocomplete(inputComune, { 
-                types: ['(cities)'], 
-                componentRestrictions: { country: 'it' } 
-            });
-            
-            autocompleteInd = new google.maps.places.Autocomplete(inputIndirizzo, { 
-                componentRestrictions: { country: 'it' },
-                fields: ['geometry', 'name', 'opening_hours', 'formatted_address']
-            });
+            // Blocco isolato per il Comune
+            try {
+                autocompleteComune = new google.maps.places.Autocomplete(inputComune, { 
+                    types: ['(cities)'], 
+                    componentRestrictions: { country: 'it' } 
+                });
+                
+                autocompleteComune.addListener('place_changed', function() {
+                    const place = autocompleteComune.getPlace();
+                    if (place && place.geometry) {
+                        comuneSelezionato = place.name || inputComune.value;
+                        if (autocompleteInd) {
+                            autocompleteInd.setBounds(place.geometry.viewport);
+                        }
+                        inputIndirizzo.disabled = false;
+                        inputIndirizzo.value = '';
+                        inputIndirizzo.placeholder = "Via in " + comuneSelezionato;
+                        inputIndirizzo.focus(); // Passa in automatico al campo indirizzo
+                        document.getElementById('orari-negozio').style.display = 'none';
+                    }
+                });
+            } catch(e) { console.error("Errore init Comune:", e); }
 
-            autocompleteComune.addListener('place_changed', function() {
-                const place = autocompleteComune.getPlace();
-                if (place && place.geometry) {
-                    comuneSelezionato = place.name || inputComune.value;
-                    autocompleteInd.setBounds(place.geometry.viewport);
-                    inputIndirizzo.disabled = false;
-                    inputIndirizzo.value = '';
-                    inputIndirizzo.placeholder = "Via in " + comuneSelezionato;
-                    document.getElementById('orari-negozio').style.display = 'none';
-                    document.getElementById('orari-negozio').innerHTML = '';
-                }
-            });
+            // Blocco isolato per l'Indirizzo
+            try {
+                autocompleteInd = new google.maps.places.Autocomplete(inputIndirizzo, { 
+                    componentRestrictions: { country: 'it' }
+                    // Ho rimosso 'fields' rigidi che mandavano in crash le chiavi senza permessi premium
+                });
 
-            autocompleteInd.addListener('place_changed', function() {
-                const place = autocompleteInd.getPlace();
-                const orariBox = document.getElementById('orari-negozio');
-                if (place && place.opening_hours && place.opening_hours.weekday_text) {
-                    let html = "<strong>🕒 Orari di apertura:</strong><br>";
-                    place.opening_hours.weekday_text.forEach(giorno => {
-                        html += `${giorno}<br>`;
-                    });
-                    orariBox.innerHTML = html;
-                    orariBox.style.display = 'block';
-                } else {
-                    orariBox.style.display = 'none';
-                    orariBox.innerHTML = '';
-                }
-            });
+                autocompleteInd.addListener('place_changed', function() {
+                    const place = autocompleteInd.getPlace();
+                    const orariBox = document.getElementById('orari-negozio');
+                    if (place && place.opening_hours && place.opening_hours.weekday_text) {
+                        let html = "<strong>🕒 Orari di apertura:</strong><br>";
+                        place.opening_hours.weekday_text.forEach(giorno => { html += `${giorno}<br>`; });
+                        orariBox.innerHTML = html;
+                        orariBox.style.display = 'block';
+                    } else {
+                        orariBox.style.display = 'none';
+                        orariBox.innerHTML = '';
+                    }
+                });
+            } catch(e) { console.error("Errore init Indirizzo:", e); }
 
+            // Listener manuale per svuotamento
             inputComune.addEventListener('input', function() {
                 if (this.value.trim() === "") {
                     comuneSelezionato = "";
@@ -227,10 +210,12 @@
                     inputIndirizzo.disabled = true;
                     inputIndirizzo.placeholder = "Seleziona prima il comune...";
                     document.getElementById('orari-negozio').style.display = 'none';
-                    document.getElementById('orari-negozio').innerHTML = '';
                 }
             });
-        } catch (e) { console.error("Errore Autocomplete:", e); }
+
+        } catch (e) {
+            console.error("Errore Critico API Maps:", e);
+        }
     }
 
     function pulisciCampo(id) {
@@ -285,7 +270,9 @@
         document.getElementById('indirizzo').value = '';
         document.getElementById('note').value = '';
         document.getElementById('orari-negozio').style.display = 'none';
-        document.getElementById('orari-negozio').innerHTML = '';
+        
+        // Mantengo il focus sull'indirizzo per velocizzare l'inserimento
+        document.getElementById('indirizzo').focus();
         render();
     }
 
@@ -398,8 +385,15 @@
 
             tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
             render();
-        }, () => alert("Impossibile ottenere la posizione."));
+        }, () => alert("Impossibile ottenere la posizione GPS in questo momento."));
     }
 
     function aggiornaPulsanteGuida() {
-    
+        const btn = document.getElementById('btn-guided');
+        btn.style.display = tappe.length > 0 ? 'block' : 'none';
+    }
+
+    function avanziaGiro() { // Refuso corretto!
+        const prossima = tappe.find(t => !t.fatta);
+        if (prossima) {
+            const index = tappe.
