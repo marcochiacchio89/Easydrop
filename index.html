@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyDrop PRO</title>
     <!-- Caricamento Google Maps e Places API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=INSERISCI_LA_TUA_CHIAVE_API_QUI&libraries=places"></script>
     <style>
         body { font-family: sans-serif; background: #f4f6f9; margin: 0; padding: 15px; }
         .container { max-width: 480px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -15,9 +15,10 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
         .btn-add { background: #28a745; color: white; }
         .btn-opt { background: #17a2b8; color: white; }
+        .btn-guided { background: #ff9800; color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
         .tappa { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; border-radius: 6px; background: #f8f9fa; border-left: 5px solid #007bff; cursor: pointer; }
-        .evidenziata { background: #fff3cd; border-left-color: #ffc107; } /* Strada cliccata */
-        .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; } /* Consegna effettuata */
+        .evidenziata { background: #fff3cd; border-left-color: #ffc107; }
+        .fatta { background: #d4edda; border-left-color: #28a745; text-decoration: line-through; color: #6c757d; }
         .btn-del { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
@@ -37,10 +38,11 @@
     <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
 
     <label>Indirizzo:</label>
-    <input type="text" id="indirizzo" placeholder="Inizia a scrivere la via...">
+    <input type="text" id="indirizzo" placeholder="Seleziona prima il comune...">
 
     <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
+    <button id="btn-guided" class="btn btn-guided" onclick="avanziaGiro()">🚀 INIZIA GIRO</button>
 
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
@@ -48,19 +50,31 @@
 <script>
     let tappe = [];
     let geocoder;
+    let autocompleteComune, autocompleteInd;
+    let giroIniziato = false;
 
     function initAutocomplete() {
         geocoder = new google.maps.Geocoder();
         
-        new google.maps.places.Autocomplete(
+        autocompleteComune = new google.maps.places.Autocomplete(
             document.getElementById('comune'), 
             { types: ['(cities)'], componentRestrictions: { country: 'it' } }
         );
         
-        new google.maps.places.Autocomplete(
+        autocompleteInd = new google.maps.places.Autocomplete(
             document.getElementById('indirizzo'), 
             { componentRestrictions: { country: 'it' } }
         );
+
+        // VINCOLO RIGIDO: La via viene cercata SOLO ed ESCLUSIVAMENTE dentro il comune scelto
+        autocompleteComune.addListener('place_changed', () => {
+            const place = autocompleteComune.getPlace();
+            if (place.geometry && place.geometry.viewport) {
+                autocompleteInd.setBounds(place.geometry.viewport);
+                autocompleteInd.setOptions({ strictBounds: true });
+                document.getElementById('indirizzo').placeholder = "Ora scrivi la via...";
+            }
+        });
     }
 
     google.maps.event.addDomListener(window, 'load', initAutocomplete);
@@ -116,6 +130,7 @@
             if (confirm("Vuoi contrassegnare questa consegna come EFFETTUATA?")) {
                 tappe[i].fatta = true;
                 render();
+                aggiornaPulsanteGuida();
             }
         }, 1000);
     }
@@ -128,6 +143,21 @@
                   Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                   Math.sin(dLon/2) * Math.sin(dLon/2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function geocodeAddress(address) {
+        return new Promise((resolve) => {
+            geocoder.geocode({ address: address }, (results, status) => {
+                if (status === 'OK' && results[0]) {
+                    resolve({
+                        lat: results[0].geometry.location.lat(),
+                        lng: results[0].geometry.location.lng()
+                    });
+                } else {
+                    resolve(null);
+                }
+            });
+        });
     }
 
     async function ottimizzaGiro() {
@@ -145,20 +175,18 @@
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
 
+            // Geocodifica asincrona reale di tutte le tappe prima del riordino
             for (let t of tappe) {
                 if (!t.lat || !t.lng) {
-                    await new Promise((resolve) => {
-                        geocoder.geocode({ address: t.indirizzo }, (results, status) => {
-                            if (status === 'OK' && results[0]) {
-                                t.lat = results[0].geometry.location.lat();
-                                t.lng = results[0].geometry.location.lng();
-                            }
-                            resolve();
-                        });
-                    });
+                    const coords = await geocodeAddress(t.indirizzo);
+                    if (coords) {
+                        t.lat = coords.lat;
+                        t.lng = coords.lng;
+                    }
                 }
             }
 
+            // Ordinamento per reale distanza GPS
             tappe.sort((a, b) => {
                 if (a.fatta !== b.fatta) return a.fatta ? 1 : -1;
                 const distA = a.lat ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 9999;
@@ -167,10 +195,41 @@
             });
 
             render();
-            alert("Giro ottimizzato in base alla tua posizione GPS attuale!");
+            giroIniziato = false;
+            
+            const btnGuided = document.getElementById('btn-guided');
+            btnGuided.style.display = 'block';
+            btnGuided.innerText = "🚀 INIZIA GIRO";
+
+            alert("Giro riordinato con successo dalla tappa più vicina alla più lontana!");
         }, () => {
             alert("Impossibile accedere al GPS. Verificare i permessi.");
         });
+    }
+
+    function avanziaGiro() {
+        const prossimoIndex = tappe.findIndex(t => !t.fatta);
+        if (prossimoIndex === -1) {
+            alert("Tutte le consegne sono state completate!");
+            return;
+        }
+
+        giroIniziato = true;
+        aggiornaPulsanteGuida();
+        apriNavigatore(prossimoIndex);
+    }
+
+    function aggiornaPulsanteGuida() {
+        const btnGuided = document.getElementById('btn-guided');
+        const prossimoIndex = tappe.findIndex(t => !t.fatta);
+
+        if (prossimoIndex === -1) {
+            btnGuided.innerText = "🎉 GIRO COMPLETATO";
+            btnGuided.style.background = "#28a745";
+        } else if (giroIniziato) {
+            btnGuided.innerText = `▶ CONTINUA (${prossimoIndex + 1}° Consegna)`;
+            btnGuided.style.background = "#ff9800";
+        }
     }
 </script>
 </body>
