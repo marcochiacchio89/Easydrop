@@ -3,7 +3,8 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>EasyDrop PRO V 3.6</title>
+ <title>EasyDrop PRO V 3.5</title>
+ <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
  <style>
  :root {
  --bg-body: #f4f6f9;
@@ -16,10 +17,9 @@
  }
  body { font-family: sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
  .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; }  
- 
  /* Header con Titolo e Menu Hamburger */
  .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
- h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; font-size: 20px; }
+ h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; }
  .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 0 5px; }
  
  /* Menu Hamburger Laterale */
@@ -27,7 +27,6 @@
  .side-menu a { padding: 12px 20px; text-decoration: none; font-size: 16px; color: #333; display: block; transition: 0.2s; border-bottom: 1px solid #eee; }
  .side-menu a:hover { background-color: #f1f1f1; color: var(--primary-color); }
  .side-menu .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; border: none; background: none; cursor: pointer; }
- 
  label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
  input, select { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
  select { padding-right: 12px; }
@@ -60,10 +59,9 @@
 <body>
 <div class="container">  
  <div class="app-header">
-  <h2>EasyDrop PRO V 3.6 📦</h2>
+  <h2>EasyDrop PRO V 3.5 📦</h2>
   <button class="menu-btn" onclick="apriMenu()">☰</button>
  </div>
- 
  <!-- Menu Hamburger Laterale -->
  <div id="sideMenu" class="side-menu">
   <button class="close-btn" onclick="chiudiMenu()">&times;</button>
@@ -71,7 +69,6 @@
   <a href="#" onclick="chiudiMenu(); alert('Sezione Impostazioni in arrivo');">⚙️ Impostazioni</a>
   <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo');">📞 Assistenza</a>
  </div>
- 
  <label>Ditta:</label>
  <select id="ditta" onchange="cambiaTemaDitta()">
   <option value="SDA">SDA</option>
@@ -80,24 +77,22 @@
   <option value="GLS">GLS</option>
   <option value="DHL">DHL</option>
  </select>
- 
+
+ <!-- FOTOCAMERA OCR INTEGRATA -->
+ <label>📷 Scansiona Etichetta (Fotocamera):</label>
+ <input type="file" id="cameraOCR" accept="image/*" capture="environment" style="background: #fff; cursor: pointer;">
+ <div id="ocrLoading" style="display:none; color: var(--primary-color); font-weight: bold; font-size: 13px; margin-top: 5px; text-align: center;">⏳ Lettura etichetta in corso...</div>
+
  <label>Comune:</label>
  <div class="input-container">
   <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
   <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
  </div>
- 
  <label>Indirizzo:</label>  
  <div class="input-container">
   <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
   <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
  </div>
-
- <!-- FOTOCAMERA CLOUD VISION INTELLIGENTE -->
- <label>📷 Fotocamera (Acquisizione Automatica Etichetta):</label>
- <input type="file" id="cameraOCR" accept="image/*" capture="environment" style="background: #fff; cursor: pointer;">
- <div id="ocrLoading" style="display:none; color: var(--primary-color); font-weight: bold; font-size: 13px; margin-top: 5px; text-align: center;">⏳ Lettura etichetta e ricerca destinatario in corso...</div>
- 
  <label>Note (facoltativo):</label>
  <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
  
@@ -115,27 +110,26 @@
    <button class="btn-batch btn-batch-del" onclick="eliminaSelezionate()">🗑 Elimina</button>
   </div>
  </div>
- 
  <div id="lista" style="margin-top: 15px;"></div>
 </div> 
 
 <script>
- // --- VARIABILI GLOBALI ---
  let tappe = [];
- let geocoder = null;
- let autocompleteComune = null;
- let autocompleteInd = null;
+ let geocoder;
+ let autocompleteComune;
+ let autocompleteInd;
  let giroIniziato = false;
  let comuneSelezionato = "";
 
- // --- FUNZIONI UI INDIPENDENTI E SICURE ---
+ // CHIAVE API UNICA (Inserisci qui la tua chiave per Maps e Vision)
+ const API_KEY = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI";
+
  function apriMenu() {
   document.getElementById("sideMenu").style.width = "250px";
  }
  function chiudiMenu() {
   document.getElementById("sideMenu").style.width = "0";
  }
-
  function cambiaTemaDitta() {
   const ditta = document.getElementById('ditta').value;
   const root = document.documentElement;
@@ -171,43 +165,13 @@
    root.style.setProperty('--btn-guided', '#d40511');
   }
  }
-
- function pulisciCampo(id) {
-  const el = document.getElementById(id);
-  el.value = '';
-  if (id === 'comune') {
-   comuneSelezionato = "";
-   const indInput = document.getElementById('indirizzo');
-   indInput.value = '';
-   indInput.disabled = true;
-   indInput.placeholder = "Seleziona prima il comune...";
-  }
-  el.focus();
- }
-
- // GESTIONE IMMEDIATA AL CARICAMENTO
+ 
  window.addEventListener('DOMContentLoaded', () => {
   cambiaTemaDitta();
-  
-  document.getElementById('comune').addEventListener('input', function() {
-   const val = this.value.trim();
-   const indInput = document.getElementById('indirizzo');
-   if (val === "") {
-    comuneSelezionato = "";  
-    indInput.value = "";
-    indInput.disabled = true;
-    indInput.placeholder = "Seleziona prima il comune...";
-   } else {
-    indInput.disabled = false;
-    indInput.placeholder = "Inserisci via in " + val;
-   }
-  });
  });  
- 
- // --- FUNZIONI LOGICHE (TAPPE E MAPPE) ---
+
  function initAutocomplete() {
   try {
-   if (typeof google === 'undefined') return;
    geocoder = new google.maps.Geocoder();
    autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
    autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
@@ -224,17 +188,38 @@
      indInput.placeholder = "Via in " + comuneSelezionato;
     }
    });
-  } catch (e) {
-   console.warn("L'autocompletamento di Google è attualmente inattivo.", e);
-  }
+   
+   document.getElementById('comune').addEventListener('input', function() {
+    const val = this.value.trim();
+    const indInput = document.getElementById('indirizzo');
+    if (val === "") {
+     comuneSelezionato = "";  
+     indInput.value = "";
+     indInput.disabled = true;
+     indInput.placeholder = "Seleziona prima il comune...";
+    } else {
+     indInput.disabled = false;
+     indInput.placeholder = "Inserisci via...";
+    }
+   });
+  } catch (e) { console.error("Errore:", e); }
  }
- 
+
+ function pulisciCampo(id) {
+  const el = document.getElementById(id);
+  el.value = '';
+  if (id === 'comune') {
+   comuneSelezionato = "";
+   const indInput = document.getElementById('indirizzo');
+   indInput.value = '';
+   indInput.disabled = true;
+   indInput.placeholder = "Seleziona prima il comune...";
+  }
+  el.focus();
+ }
+
  function geocodeAddress(address) {
   return new Promise((resolve) => {
-   if (typeof google === 'undefined' || !google.maps) {
-     resolve(null);
-     return;
-   }
    if (!geocoder) { geocoder = new google.maps.Geocoder(); }
    geocoder.geocode({ address: address }, (results, status) => {  
     if (status === 'OK' && results && results[0] && results[0].geometry) {
@@ -243,7 +228,7 @@
    });
   });
  }
- 
+
  async function aggiungiTappa() {
   let com = comuneSelezionato || document.getElementById('comune').value.trim();
   const indInput = document.getElementById('indirizzo').value.trim();
@@ -253,27 +238,20 @@
   const indirizzoCompleto = `${indInput}, ${com}`;
   let lat = null;
   let lng = null;
-  
-  try {
-   if (autocompleteInd) {
-    const place = autocompleteInd.getPlace();
-    if (place && place.geometry && place.geometry.location) {
-     lat = place.geometry.location.lat();
-     lng = place.geometry.location.lng();
-    }
-   }
-   if (!lat || !lng) {
-    const coords = await geocodeAddress(indirizzoCompleto);
-    if (coords) { lat = coords.lat; lng = coords.lng; }
-   }
-  } catch (e) { console.warn("Geocodifica in errore.", e); }
-  
+  const place = autocompleteInd.getPlace();
+  if (place && place.geometry && place.geometry.location) {
+   lat = place.geometry.location.lat();
+   lng = place.geometry.location.lng();
+  } else {
+   const coords = await geocodeAddress(indirizzoCompleto);
+   if (coords) { lat = coords.lat; lng = coords.lng; }
+  }
   tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
   document.getElementById('indirizzo').value = '';
   document.getElementById('note').value = '';
   render();
  }
- 
+
  function render() {
   const list = document.getElementById('lista');
   const batchBar = document.getElementById('batch-bar');
@@ -300,17 +278,19 @@
   });
   aggiornaPulsanteGuida();
  }
- 
+
  function toggleSelezionaTappa(i, checkbox) {
   tappe[i].selezionata = checkbox.checked;
   const tuttiSelezionati = tappe.length > 0 && tappe.every(t => t.selezionata);
   document.getElementById('seleziona-tutti').checked = tuttiSelezionati;
  }
+
  function toggleSelezionaTutti(checkbox) {
   const stato = checkbox.checked;
   tappe.forEach(t => t.selezionata = stato);
   render();
  }
+
  function toggleFattaSelezionate() {
   const selezionate = tappe.filter(t => t.selezionata);
   if (selezionate.length === 0) { alert("Seleziona almeno una tappa."); return; }
@@ -318,6 +298,7 @@
   selezionate.forEach(t => { t.fatta = !tutteFatte; if (!tutteFatte) t.cliccata = false; });
   render();
  }
+
  function toggleEvidenziaSelezionate() {  
   const selezionate = tappe.filter(t => t.selezionata);
   if (selezionate.length === 0) { alert("Seleziona almeno una tappa."); return; }
@@ -325,6 +306,7 @@
   selezionate.forEach(t => { t.cliccata = !tutteEvidenziate; });
   render();
  }
+
  function eliminaSelezionate() {
   const daEliminare = tappe.filter(t => t.selezionata).length;
   if (daEliminare === 0) { alert("Seleziona almeno una tappa."); return; }
@@ -334,8 +316,9 @@
    render();
   }
  }
+
  function rimuoviTappa(i) { tappe.splice(i, 1); render(); }
- 
+
  function apriNavigatore(i) {
   if (tappe[i].fatta) return;
   tappe[i].cliccata = true;
@@ -343,7 +326,7 @@
   const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
   window.open(url, '_blank');
  }  
- 
+
  function calcolaDistanza(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -351,7 +334,7 @@
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
  }
- 
+
  async function ottimizzaGiro() {
   if (tappe.length === 0) { alert("Aggiungi almeno una via!"); return; }
   if (!navigator.geolocation) { alert("GPS non supportato."); return; }
@@ -377,13 +360,14 @@
    
    tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
    render();
-  }, () => alert("Impossibile ottenere la posizione per il GPS."));
+  }, () => alert("Impossibile ottenere la posizione."));
  }
- 
+
  function aggiornaPulsanteGuida() {
   const btn = document.getElementById('btn-guided');
   btn.style.display = tappe.length > 0 ? 'block' : 'none';
  }
+
  function avanzaiGiro() {
   const prossima = tappe.find(t => !t.fatta);
   if (prossima) {
@@ -394,9 +378,7 @@
   }
  }
 
- // --- FOTOCAMERA CLOUD VISION OCR (Chiave inserita) ---
- const API_KEY_VISION = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI"; 
-
+ // --- GESTIONE FOTOCAMERA OCR CLOUD VISION ---
  document.getElementById('cameraOCR').addEventListener('change', async function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -413,7 +395,7 @@
    });
    const cleanedBase64 = base64Image.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
 
-   const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY_VISION}`, {
+   const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -465,4 +447,17 @@
     }
 
     if (estrattoVia || estrattoComune) {
-     const msg = `📦 Destinatario Rilevato:\n\n📍 Comune: ${estrattoComune || 'Non trovato'}\n🏠 Via: ${estrattoVia || 'Non trovata'}\n\nVuoi 
+     const msg = `📦 Destinatario Rilevato:\n\n📍 Comune: ${estrattoComune || 'Non trovato'}\n🏠 Via: ${estrattoVia || 'Non trovata'}\n\nVuoi inserire questi dati nei campi?`;
+     
+     if (confirm(msg)) {
+      if (estrattoComune) {
+       comuneSelezionato = estrattoComune;
+       document.getElementById('comune').value = estrattoComune;
+      }
+      if (estrattoVia) {
+       document.getElementById('indirizzo').disabled = false;
+       document.getElementById('indirizzo').value = estrattoVia;
+      }
+     }
+    } else {
+   
