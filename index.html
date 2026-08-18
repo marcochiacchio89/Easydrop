@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.5</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
+    <title>EasyDrop PRO V 3.6</title>
+    <!-- API Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=INSERISCI_LA_TUA_CHIAVE_API_QUI&libraries=places&callback=initAutocomplete" async defer></script>
+    <!-- Libreria OCR Tesseract per Scansione Foto -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --bg-body: #f4f6f9;
@@ -14,8 +17,8 @@
             --btn-add: #28a745;
             --btn-opt: #17a2b8;
             --btn-guided: #ff9800;
+            --btn-camera: #6f42c1;
         }
-
         body { font-family: sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
         .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; }
         
@@ -29,7 +32,6 @@
         .side-menu a { padding: 12px 20px; text-decoration: none; font-size: 16px; color: #333; display: block; transition: 0.2s; border-bottom: 1px solid #eee; }
         .side-menu a:hover { background-color: #f1f1f1; color: var(--primary-color); }
         .side-menu .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; border: none; background: none; cursor: pointer; }
-
         label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
         input, select { width: 100%; padding: 12px; padding-right: 35px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         select { padding-right: 12px; }
@@ -41,6 +43,10 @@
         .btn-add { background: var(--btn-add); color: white; }
         .btn-opt { background: var(--btn-opt); color: white; }
         .btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        .btn-camera { background: var(--btn-camera); color: white; }
+        
+        /* Stato caricamento OCR */
+        #ocr-status { display: none; font-size: 13px; text-align: center; margin-top: 8px; font-weight: bold; padding: 6px; border-radius: 4px; }
         
         /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
@@ -62,10 +68,10 @@
 <body>
 <div class="container">
     <div class="app-header">
-        <h2>EasyDrop PRO V 3.5 📦</h2>
+        <h2>EasyDrop PRO V 3.6 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
-
+    
     <!-- Menu Hamburger Laterale -->
     <div id="sideMenu" class="side-menu">
         <button class="close-btn" onclick="chiudiMenu()">&times;</button>
@@ -73,7 +79,7 @@
         <a href="#" onclick="chiudiMenu(); alert('Sezione Impostazioni in arrivo');">⚙️ Impostazioni</a>
         <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo');">🛠️ Assistenza</a>
     </div>
-
+    
     <label>Ditta:</label>
     <select id="ditta" onchange="cambiaTemaDitta()">
         <option value="SDA">SDA</option>
@@ -82,16 +88,24 @@
         <option value="GLS">GLS</option>
         <option value="DHL">DHL</option>
     </select>
+    
+    <!-- Pulsante Fotocamera per Acquisizione Etichetta -->
+    <button class="btn btn-camera" onclick="document.getElementById('cameraInput').click()">📷 Scansiona Etichetta (Foto)</button>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="elaboraFotoEtichetta(event)">
+    <div id="ocr-status"></div>
+
     <label>Comune:</label>
     <div class="input-container">
         <input type="text" id="comune" placeholder="Inizia a scrivere il comune...">
         <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
     </div>
+    
     <label>Indirizzo:</label>
     <div class="input-container">
         <input type="text" id="indirizzo" placeholder="Seleziona prima il comune..." disabled>
         <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
     </div>
+    
     <label>Note (facoltativo):</label>
     <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
     
@@ -109,9 +123,10 @@
             <button class="btn-batch btn-batch-del" onclick="eliminaSelezionate()">🗑 Elimina</button>
         </div>
     </div>
-
+    
     <div id="lista" style="margin-top: 15px;"></div>
 </div>
+
 <script>
     let tappe = [];
     let geocoder;
@@ -123,15 +138,14 @@
     function apriMenu() {
         document.getElementById("sideMenu").style.width = "250px";
     }
-
+    
     function chiudiMenu() {
         document.getElementById("sideMenu").style.width = "0";
     }
-
+    
     function cambiaTemaDitta() {
         const ditta = document.getElementById('ditta').value;
         const root = document.documentElement;
-
         if (ditta === "SDA") {
             root.style.setProperty('--bg-body', '#eef3f9');
             root.style.setProperty('--primary-color', '#003366');
@@ -174,7 +188,7 @@
             geocoder = new google.maps.Geocoder();
             autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
             autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
-
+            
             autocompleteComune.addListener('place_changed', function() {
                 const place = autocompleteComune.getPlace();
                 const indInput = document.getElementById('indirizzo');
@@ -187,7 +201,7 @@
                     indInput.placeholder = "Via in " + comuneSelezionato;
                 }
             });
-
+            
             document.getElementById('comune').addEventListener('input', function() {
                 const val = this.value.trim();
                 const indInput = document.getElementById('indirizzo');
@@ -201,7 +215,7 @@
                     indInput.placeholder = "Inserisci via...";
                 }
             });
-        } catch (e) { console.error("Errore:", e); }
+        } catch (e) { console.error("Errore Autocomplete:", e); }
     }
 
     function pulisciCampo(id) {
@@ -234,12 +248,11 @@
         const noteInput = document.getElementById('note').value.trim();
         
         if (!com || !indInput) { alert("Inserisci sia il comune che l'indirizzo!"); return; }
-
         const indirizzoCompleto = `${indInput}, ${com}`;
         let lat = null;
         let lng = null;
-
-        const place = autocompleteInd.getPlace();
+        
+        const place = autocompleteInd.getPlace ? autocompleteInd.getPlace() : null;
         if (place && place.geometry && place.geometry.location) {
             lat = place.geometry.location.lat();
             lng = place.geometry.location.lng();
@@ -247,11 +260,83 @@
             const coords = await geocodeAddress(indirizzoCompleto);
             if (coords) { lat = coords.lat; lng = coords.lng; }
         }
-
+        
         tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
         document.getElementById('indirizzo').value = '';
         document.getElementById('note').value = '';
         render();
+    }
+
+    /* --- FUNZIONE GESTIONE FOTOCAMERA ED ESTRAZIONE TESTO --- */
+    async function elaboraFotoEtichetta(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const statusEl = document.getElementById('ocr-status');
+        statusEl.style.display = 'block';
+        statusEl.style.background = '#e9ecef';
+        statusEl.style.color = '#007bff';
+        statusEl.innerText = '📷 Lettura etichetta in corso... Attendi qualche secondo.';
+
+        try {
+            if (typeof Tesseract === 'undefined') {
+                throw new Error("Libreria OCR non caricata.");
+            }
+            
+            const worker = await Tesseract.createWorker('ita');
+            const ret = await worker.recognize(file);
+            await worker.terminate();
+            
+            const testoEstratto = ret.data.text;
+
+            if (!testoEstratto || testoEstratto.trim() === "") {
+                statusEl.style.background = '#f8d7da';
+                statusEl.style.color = '#721c24';
+                statusEl.innerText = '❌ Nessun testo rilevato. Riprova scattando una foto più nitida.';
+                return;
+            }
+
+            analizzaECompilaTesto(testoEstratto);
+            statusEl.style.background = '#d4edda';
+            statusEl.style.color = '#155724';
+            statusEl.innerText = '✅ Lettura completata! Verifica i dati nei campi.';
+
+        } catch (err) {
+            console.error("Errore durante la scansione:", err);
+            statusEl.style.background = '#f8d7da';
+            statusEl.style.color = '#721c24';
+            statusEl.innerText = '❌ Errore durante la scansione. Inserisci i dati manualmente.';
+        } finally {
+            event.target.value = ''; // Resetta l'input file per consentire nuove foto
+        }
+    }
+
+    function analizzaECompilaTesto(testo) {
+        const righe = testo.split('\n').map(r => r.trim()).filter(r => r.length > 2);
+        
+        // Regex per individuare la via/piazza/corso e il civico
+        const regexIndirizzo = /(via|piazza|p\.zza|viale|v\.le|corso|c\.so|largo|vicolo|contrada|frazione)\s+[a-z0-9\s\.\,\'\-]+/i;
+        
+        let viaTrovata = "";
+
+        for (let riga of righe) {
+            const match = riga.match(regexIndirizzo);
+            if (match && !viaTrovata) {
+                viaTrovata = match[0].trim();
+                break;
+            }
+        }
+
+        const indInput = document.getElementById('indirizzo');
+        
+        if (viaTrovata) {
+            indInput.value = viaTrovata;
+            indInput.disabled = false;
+        } else if (righe.length > 0) {
+            // Se non trova il prefisso "Via", assegna la riga più probabile
+            indInput.value = righe[0];
+            indInput.disabled = false;
+        }
     }
 
     function render() {
@@ -261,7 +346,7 @@
         
         if (tappe.length > 0) batchBar.style.display = 'flex';
         else { batchBar.style.display = 'none'; document.getElementById('seleziona-tutti').checked = false; }
-
+        
         tappe.forEach((t, i) => {
             let classeStato = '';
             if (t.fatta) classeStato = 'fatta';
@@ -344,23 +429,22 @@
         navigator.geolocation.getCurrentPosition(async (pos) => {
             const userLat = pos.coords.latitude;
             const userLng = pos.coords.longitude;
-
             let nonFatte = tappe.filter(t => !t.fatta);
             if (nonFatte.length === 0) { alert("Tutte le tappe sono state completate!"); return; }
-
+            
             for (let t of nonFatte) {
                 if (t.lat === null || t.lng === null) {
                     const coords = await geocodeAddress(t.indirizzo);
                     if (coords) { t.lat = coords.lat; t.lng = coords.lng; }
                 }
             }
-
+            
             nonFatte.sort((a, b) => {
                 const distA = (a.lat && a.lng) ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999;
                 const distB = (b.lat && b.lng) ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999;
                 return distA - distB;
             });
-
+            
             tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
             render();
         }, () => alert("Impossibile ottenere la posizione."));
