@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop PRO V 3.6</title>
+    <title>EasyDrop PRO V 3.7</title>
     <!-- API Google Maps -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
     <!-- Libreria OCR Tesseract per Scansione Foto -->
@@ -48,6 +48,10 @@
         /* Stato caricamento OCR */
         #ocr-status { display: none; font-size: 13px; text-align: center; margin-top: 8px; font-weight: bold; padding: 6px; border-radius: 4px; }
         
+        /* Modal Pop-up Conferma OCR */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-card { background: #fff; width: 100%; max-width: 400px; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+
         /* Barra strumenti selezioni multiple */
         .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 8px 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; }
         .batch-buttons { display: flex; gap: 4px; }
@@ -68,7 +72,7 @@
 <body>
 <div class="container">
     <div class="app-header">
-        <h2>EasyDrop PRO V 3.6 📦</h2>
+        <h2>EasyDrop PRO V 3.7 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
     
@@ -125,6 +129,24 @@
     </div>
     
     <div id="lista" style="margin-top: 15px;"></div>
+</div>
+
+<!-- Modal Pop-up di Conferma Dati Scansionati -->
+<div id="modal-ocr" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="margin-top:0; color:#333; text-align:center;">🔍 Conferma Indirizzo Destinatario</h3>
+        <label style="margin-top:5px;">Comune:</label>
+        <input type="text" id="ocr-comune-input" placeholder="es. Napoli">
+        <label style="margin-top:5px;">Indirizzo completo:</label>
+        <input type="text" id="ocr-indirizzo-input" placeholder="es. Via Roma 15">
+        <label style="margin-top:5px;">Note (opzionale):</label>
+        <input type="text" id="ocr-note-input" placeholder="es. Citofono Rossi...">
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-add" style="margin:0; flex:1;" onclick="confermaEAddTappaOCR()">✅ Conferma e Aggiungi</button>
+            <button class="btn btn-batch-del" style="margin:0; width:auto; padding:0 15px; font-size:16px;" onclick="chiudiModalOCR()">❌</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -252,7 +274,7 @@
         let lat = null;
         let lng = null;
         
-        const place = autocompleteInd.getPlace ? autocompleteInd.getPlace() : null;
+        const place = (autocompleteInd && autocompleteInd.getPlace) ? autocompleteInd.getPlace() : null;
         if (place && place.geometry && place.geometry.location) {
             lat = place.geometry.location.lat();
             lng = place.geometry.location.lng();
@@ -267,7 +289,7 @@
         render();
     }
 
-    /* --- FUNZIONE GESTIONE FOTOCAMERA ED ESTRAZIONE TESTO --- */
+    /* --- GESTIONE FOTOCAMERA ED ESTRAZIONE DESTINATARIO --- */
     async function elaboraFotoEtichetta(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -297,9 +319,7 @@
             }
 
             analizzaECompilaTesto(testoEstratto);
-            statusEl.style.background = '#d4edda';
-            statusEl.style.color = '#155724';
-            statusEl.innerText = '✅ Lettura completata! Verifica i dati nei campi.';
+            statusEl.style.display = 'none';
 
         } catch (err) {
             console.error("Errore durante la scansione:", err);
@@ -307,36 +327,82 @@
             statusEl.style.color = '#721c24';
             statusEl.innerText = '❌ Errore durante la scansione. Inserisci i dati manualmente.';
         } finally {
-            event.target.value = ''; // Resetta l'input file per consentire nuove foto
+            event.target.value = '';
         }
     }
 
     function analizzaECompilaTesto(testo) {
-        const righe = testo.split('\n').map(r => r.trim()).filter(r => r.length > 2);
+        let sezioneUtile = testo;
+
+        // Isoliamo solo il blocco sotto "DESTINATARIO" ed escludiamo "MITTENTE"
+        const posDest = testo.search(/destinatario|destinazione|consegna|spett\.?le/i);
+        if (posDest !== -1) {
+            sezioneUtile = testo.substring(posDest);
+        }
         
-        // Regex per individuare la via/piazza/corso e il civico
-        const regexIndirizzo = /(via|piazza|p\.zza|viale|v\.le|corso|c\.so|largo|vicolo|contrada|frazione)\s+[a-z0-9\s\.\,\'\-]+/i;
+        const posMitt = sezioneUtile.search(/mittente|mitt\b/i);
+        if (posMitt > 0) {
+            sezioneUtile = sezioneUtile.substring(0, posMitt);
+        }
+
+        const righe = sezioneUtile.split('\n').map(r => r.trim()).filter(r => r.length > 2);
         
         let viaTrovata = "";
+        let comuneTrovato = "";
+
+        const regexIndirizzo = /(via|piazza|p\.zza|viale|v\.le|corso|c\.so|largo|vicolo|contrada|frazione)\s+[a-z0-9\s\.\,\'\-]+/i;
+        const regexCapComune = /\b\d{5}\b\s+([a-z\s\'\-]+)/i;
 
         for (let riga of righe) {
-            const match = riga.match(regexIndirizzo);
-            if (match && !viaTrovata) {
-                viaTrovata = match[0].trim();
-                break;
+            if (!viaTrovata) {
+                const matchVia = riga.match(regexIndirizzo);
+                if (matchVia) viaTrovata = matchVia[0].trim();
+            }
+            if (!comuneTrovato) {
+                const matchComune = riga.match(regexCapComune);
+                if (matchComune && matchComune[1]) {
+                    comuneTrovato = matchComune[1].replace(/\s+[a-z]{2}$/i, '').trim();
+                }
             }
         }
 
-        const indInput = document.getElementById('indirizzo');
-        
-        if (viaTrovata) {
-            indInput.value = viaTrovata;
-            indInput.disabled = false;
-        } else if (righe.length > 0) {
-            // Se non trova il prefisso "Via", assegna la riga più probabile
-            indInput.value = righe[0];
-            indInput.disabled = false;
+        if (!comuneTrovato) {
+            comuneTrovato = comuneSelezionato || document.getElementById('comune').value.trim();
         }
+
+        mostraModalOCR(comuneTrovato, viaTrovata);
+    }
+
+    function mostraModalOCR(comune, indirizzo) {
+        document.getElementById('ocr-comune-input').value = comune || '';
+        document.getElementById('ocr-indirizzo-input').value = indirizzo || '';
+        document.getElementById('ocr-note-input').value = '';
+        document.getElementById('modal-ocr').style.display = 'flex';
+    }
+
+    function chiudiModalOCR() {
+        document.getElementById('modal-ocr').style.display = 'none';
+    }
+
+    async function confermaEAddTappaOCR() {
+        const com = document.getElementById('ocr-comune-input').value.trim();
+        const ind = document.getElementById('ocr-indirizzo-input').value.trim();
+        const note = document.getElementById('ocr-note-input').value.trim();
+
+        if (!com || !ind) {
+            alert("Inserisci sia il comune che l'indirizzo prima di confermare.");
+            return;
+        }
+
+        document.getElementById('comune').value = com;
+        comuneSelezionato = com;
+        const indInput = document.getElementById('indirizzo');
+        indInput.disabled = false;
+        indInput.value = ind;
+        document.getElementById('note').value = note;
+
+        await aggiungiTappa();
+        chiudiModalOCR();
     }
 
     function render() {
@@ -455,7 +521,8 @@
         btn.style.display = tappe.length > 0 ? 'block' : 'none';
     }
 
-    function avanzaiGiro() {
+    /* --- CORREZIONE NOME FUNZIONE PER PULSANTE INIZIA GIRO --- */
+    function avanziaGiro() {
         const prossima = tappe.find(t => !t.fatta);
         if (prossima) {
             const index = tappe.indexOf(prossima);
