@@ -95,11 +95,11 @@
  </div>
 
  <!-- ========================================== -->
- <!-- NUOVA AGGIUNTA: FOTOCAMERA CLOUD VISION    -->
+ <!-- FOTOCAMERA CLOUD VISION INTELLIGENTE       -->
  <!-- ========================================== -->
- <label>📷 Fotocamera (Acquisizione Automatica):</label>
+ <label>📷 Fotocamera (Acquisizione Automatica Etichetta):</label>
  <input type="file" id="cameraOCR" accept="image/*" capture="environment" style="background: #fff; cursor: pointer;">
- <div id="ocrLoading" style="display:none; color: var(--primary-color); font-weight: bold; font-size: 13px; margin-top: 5px; text-align: center;">⏳ Lettura etichetta in corso...</div>
+ <div id="ocrLoading" style="display:none; color: var(--primary-color); font-weight: bold; font-size: 13px; margin-top: 5px; text-align: center;">⏳ Lettura etichetta e ricerca destinatario in corso...</div>
  <!-- ========================================== -->
  
  <label>Note (facoltativo):</label>
@@ -381,7 +381,7 @@
  }
 
  // =====================================================================
- // NUOVA FUNZIONE ISOLATA: LETTURA ETICHETTA TRAMITE FOTOCAMERA (OCR)
+ // LETTURA ETICHETTA CON FILTRO DESTINATARIO E POPUP
  // =====================================================================
  const API_KEY_VISION = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI"; 
 
@@ -393,7 +393,6 @@
   loading.style.display = 'block';
 
   try {
-   // 1. Converti immagine scattata in formato Base64 per spedirla a Google
    const base64Image = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -402,7 +401,6 @@
    });
    const cleanedBase64 = base64Image.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
 
-   // 2. Invia alla Cloud Vision API
    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY_VISION}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -413,30 +411,42 @@
 
    const data = await response.json();
    
-   // 3. Estrai e scrivi nel campo Indirizzo
    if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
     const text = data.responses[0].fullTextAnnotation.text;
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
-    // Filtriamo le righe troppo corte per prendere principalmente via e comune
-    const lines = text.split('\n').filter(line => line.trim().length > 3);
-    const estratto = lines.slice(0, 3).join(', '); 
+    // 1. TROVA L'INIZIO DEL DESTINATARIO (Scarta il mittente)
+    let startIndex = 0;
+    const destKeywords = ['DESTINATARIO', 'DEST.', 'SPEDIRE A', 'CONSEGNARE A', 'TO:'];
+    for (let i = 0; i < lines.length; i++) {
+     if (destKeywords.some(kw => lines[i].toUpperCase().includes(kw))) {
+      startIndex = i + 1; // Parti dalla riga successiva
+      break;
+     }
+    }
     
-    const indInput = document.getElementById('indirizzo');
-    indInput.disabled = false; // Sblocca il campo
-    indInput.value = estratto;
+    // Isola le righe del destinatario (esamina le 6 righe successive)
+    const targetLines = lines.slice(startIndex, startIndex + 6);
+    let estrattoVia = "";
+    let estrattoComune = "";
     
-    alert("✅ Etichetta letta! Ricontrolla il campo Indirizzo e seleziona le parti in eccesso prima di aggiungere la tappa.");
-   } else {
-    alert("❌ Nessun testo riconosciuto con chiarezza.");
-   }
-  } catch (err) {
-   console.error(err);
-   alert("❌ Errore di comunicazione con la fotocamera API.");
-  } finally {
-   loading.style.display = 'none';
-   e.target.value = ''; // Resetta per permettere una nuova scansione
-  }
- });
-</script>
-</body>
-</html> 
+    for (let line of targetLines) {
+     // 2. CERCA LA VIA (Inizia con Via, Viale, Piazza, Corso, ecc.)
+     if (!estrattoVia && /^(Via|Viale|Piazza|P\.zza|Corso|C\.so|Strada|Traversa|Vico|Largo|Contrada|C\.da)\b/i.test(line)) {
+      estrattoVia = line;
+     }
+     
+     // 3. CERCA IL COMUNE (Cerca il CAP a 5 cifre e prende il testo successivo)
+     const capMatch = line.match(/\b\d{5}\b\s+([A-Za-z\s'\-]+)(?:\s*[A-Z]{2}\b|\s*\([A-Z]{2}\))?/i);
+     if (!estrattoComune && capMatch) {
+      estrattoComune = capMatch[1].trim(); 
+     }
+    }
+    
+    // Fallback: se ha trovato la via ma non il comune, prova a prendere la riga sotto la via
+    if (estrattoVia && !estrattoComune) {
+       const viaIndex = targetLines.indexOf(estrattoVia);
+       if (viaIndex !== -1 && viaIndex + 1 < targetLines.length) {
+           let nextLine = targetLines[viaIndex + 1];
+           // Pulisce eventuali rimasugli di CAP o Province non agganciati prima
+   
