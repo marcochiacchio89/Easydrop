@@ -6,32 +6,6 @@
  <title>EasyDrop PRO V 3.6</title>
  <style>
  :root {
-  --bg-body: #eef3f9;
-  --bg-container: #ffffff;
-  --text-main: #333333;
-  --primary-color: #003366;
-  --btn-add: #003366;
-  --btn-opt: #d4af37;
-  --btn-guided: #003366;
- }
- body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
- .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12Hai perfettamente ragione ed è doveroso da parte mia chiederti scusa. Non sei assolutamente tu a spiegarti male. Il problema è stato interamente causato da un mio grave errore tecnico nella struttura dell'ultimo codice.
-
-Ho "concatenato" in modo sbagliato l'integrazione di Google Maps con le funzioni base dell'interfaccia. Il risultato? Non appena la mappa o l'API riscontrava un errore (ad esempio per l'assenza temporanea della chiave o per un caricamento in ritardo), **l'intero JavaScript andava in crash**. Questo effetto a catena causava il blocco totale del programma, congelando i temi, il menù a scomparsa, i pulsanti e l'input delle strade. 
-
-Mantengo la promessa e ho riscritto l'architettura. Ora ogni singola parte dell'interfaccia (temi colore, menù laterale, inserimento testo) è **isolata, blindata e indipendente**. Significa che, a prescindere dallo stato di Google Maps o della fotocamera, l'app funzionerà sempre in modo reattivo, e il campo dell'indirizzo si sbloccherà all'istante non appena inizierai a scrivere il comune, senza dover aspettare conferme esterne. 
-
-Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
-
-```html
-<!DOCTYPE html>
-<html lang="it">
-<head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>EasyDrop PRO V 3.6</title>
- <style>
- :root {
  --bg-body: #f4f6f9;
  --bg-container: #fff;
  --text-main: #333;
@@ -211,11 +185,10 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
   el.focus();
  }
 
- // GESTIONE IMMEDIATA AL CARICAMENTO (Non aspetta API esterne)
+ // GESTIONE IMMEDIATA AL CARICAMENTO
  window.addEventListener('DOMContentLoaded', () => {
   cambiaTemaDitta();
   
-  // Sblocco del campo indirizzo automatico non appena digiti il comune
   document.getElementById('comune').addEventListener('input', function() {
    const val = this.value.trim();
    const indInput = document.getElementById('indirizzo');
@@ -252,7 +225,7 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
     }
    });
   } catch (e) {
-   console.warn("L'autocompletamento di Google è attualmente inattivo, ma puoi inserire l'indirizzo manualmente.", e);
+   console.warn("L'autocompletamento di Google è attualmente inattivo.", e);
   }
  }
  
@@ -293,7 +266,7 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
     const coords = await geocodeAddress(indirizzoCompleto);
     if (coords) { lat = coords.lat; lng = coords.lng; }
    }
-  } catch (e) { console.warn("Geocodifica in errore o API mancante, la tappa verrà comunque aggiunta.", e); }
+  } catch (e) { console.warn("Geocodifica in errore.", e); }
   
   tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
   document.getElementById('indirizzo').value = '';
@@ -367,7 +340,7 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
   if (tappe[i].fatta) return;
   tappe[i].cliccata = true;
   render();
-  const url = `[https://www.google.com/maps/dir/?api=1&destination=$](https://www.google.com/maps/dir/?api=1&destination=$){encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
   window.open(url, '_blank');
  }  
  
@@ -421,7 +394,7 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
   }
  }
 
- // --- FOTOCAMERA CLOUD VISION OCR (Totalmente protetta) ---
+ // --- FOTOCAMERA CLOUD VISION OCR (Chiave inserita) ---
  const API_KEY_VISION = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI"; 
 
  document.getElementById('cameraOCR').addEventListener('change', async function(e) {
@@ -440,4 +413,56 @@ Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
    });
    const cleanedBase64 = base64Image.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
 
+   const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY_VISION}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+     requests: [{ image: { content: cleanedBase64 }, features: [{ type: 'TEXT_DETECTION' }] }]
+    })
+   });
+
+   const data = await response.json();
    
+   if (data.error) {
+     alert("❌ Errore API fotocamera: " + data.error.message);
+     return;
+   }
+   
+   if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
+    const text = data.responses[0].fullTextAnnotation.text;
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    let startIndex = 0;
+    const destKeywords = ['DESTINATARIO', 'DEST.', 'SPEDIRE A', 'CONSEGNARE A', 'TO:'];
+    for (let i = 0; i < lines.length; i++) {
+     if (destKeywords.some(kw => lines[i].toUpperCase().includes(kw))) {
+      startIndex = i + 1;
+      break;
+     }
+    }
+    
+    const targetLines = lines.slice(startIndex, startIndex + 6);
+    let estrattoVia = "";
+    let estrattoComune = "";
+    
+    for (let line of targetLines) {
+     if (!estrattoVia && /^(Via|Viale|Piazza|P\.zza|Corso|C\.so|Strada|Traversa|Vico|Largo|Contrada|C\.da)\b/i.test(line)) {
+      estrattoVia = line;
+     }
+     const capMatch = line.match(/\b\d{5}\b\s+([A-Za-z\s'\-]+)(?:\s*[A-Z]{2}\b|\s*\([A-Z]{2}\))?/i);
+     if (!estrattoComune && capMatch) {
+      estrattoComune = capMatch[1].trim(); 
+     }
+    }
+    
+    if (estrattoVia && !estrattoComune) {
+       const viaIndex = targetLines.indexOf(estrattoVia);
+       if (viaIndex !== -1 && viaIndex + 1 < targetLines.length) {
+           let nextLine = targetLines[viaIndex + 1];
+           nextLine = nextLine.replace(/\b\d{5}\b/g, '').replace(/\b[A-Z]{2}\b/g, '').trim();
+           estrattoComune = nextLine;
+       }
+    }
+
+    if (estrattoVia || estrattoComune) {
+     const msg = `📦 Destinatario Rilevato:\n\n📍 Comune: ${estrattoComune || 'Non trovato'}\n🏠 Via: ${estrattoVia || 'Non trovata'}\n\nVuoi 
