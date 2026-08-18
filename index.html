@@ -3,8 +3,33 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>EasyDrop PRO V 3.5</title>
- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
+ <title>EasyDrop PRO V 3.6</title>
+ <style>
+ :root {
+  --bg-body: #eef3f9;
+  --bg-container: #ffffff;
+  --text-main: #333333;
+  --primary-color: #003366;
+  --btn-add: #003366;
+  --btn-opt: #d4af37;
+  --btn-guided: #003366;
+ }
+ body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-body); margin: 0; padding: 15px; transition: background 0.3s ease; }
+ .container { max-width: 480px; margin: auto; background: var(--bg-container); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12Hai perfettamente ragione ed è doveroso da parte mia chiederti scusa. Non sei assolutamente tu a spiegarti male. Il problema è stato interamente causato da un mio grave errore tecnico nella struttura dell'ultimo codice.
+
+Ho "concatenato" in modo sbagliato l'integrazione di Google Maps con le funzioni base dell'interfaccia. Il risultato? Non appena la mappa o l'API riscontrava un errore (ad esempio per l'assenza temporanea della chiave o per un caricamento in ritardo), **l'intero JavaScript andava in crash**. Questo effetto a catena causava il blocco totale del programma, congelando i temi, il menù a scomparsa, i pulsanti e l'input delle strade. 
+
+Mantengo la promessa e ho riscritto l'architettura. Ora ogni singola parte dell'interfaccia (temi colore, menù laterale, inserimento testo) è **isolata, blindata e indipendente**. Significa che, a prescindere dallo stato di Google Maps o della fotocamera, l'app funzionerà sempre in modo reattivo, e il campo dell'indirizzo si sbloccherà all'istante non appena inizierai a scrivere il comune, senza dover aspettare conferme esterne. 
+
+Come mi hai chiesto, ecco l'upgrade ufficiale alla **Versione 3.6**.
+
+```html
+<!DOCTYPE html>
+<html lang="it">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>EasyDrop PRO V 3.6</title>
  <style>
  :root {
  --bg-body: #f4f6f9;
@@ -20,7 +45,7 @@
  
  /* Header con Titolo e Menu Hamburger */
  .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
- h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; }
+ h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; font-size: 20px; }
  .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 0 5px; }
  
  /* Menu Hamburger Laterale */
@@ -61,7 +86,7 @@
 <body>
 <div class="container">  
  <div class="app-header">
-  <h2>EasyDrop PRO V 3.5 📦</h2>
+  <h2>EasyDrop PRO V 3.6 📦</h2>
   <button class="menu-btn" onclick="apriMenu()">☰</button>
  </div>
  
@@ -94,13 +119,10 @@
   <span class="clear-btn" onclick="pulisciCampo('indirizzo')">&times;</span>
  </div>
 
- <!-- ========================================== -->
- <!-- FOTOCAMERA CLOUD VISION INTELLIGENTE       -->
- <!-- ========================================== -->
+ <!-- FOTOCAMERA CLOUD VISION INTELLIGENTE -->
  <label>📷 Fotocamera (Acquisizione Automatica Etichetta):</label>
  <input type="file" id="cameraOCR" accept="image/*" capture="environment" style="background: #fff; cursor: pointer;">
  <div id="ocrLoading" style="display:none; color: var(--primary-color); font-weight: bold; font-size: 13px; margin-top: 5px; text-align: center;">⏳ Lettura etichetta e ricerca destinatario in corso...</div>
- <!-- ========================================== -->
  
  <label>Note (facoltativo):</label>
  <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
@@ -124,19 +146,22 @@
 </div> 
 
 <script>
+ // --- VARIABILI GLOBALI ---
  let tappe = [];
- let geocoder;
- let autocompleteComune;
- let autocompleteInd;
+ let geocoder = null;
+ let autocompleteComune = null;
+ let autocompleteInd = null;
  let giroIniziato = false;
  let comuneSelezionato = "";
- 
+
+ // --- FUNZIONI UI INDIPENDENTI E SICURE ---
  function apriMenu() {
   document.getElementById("sideMenu").style.width = "250px";
  }
  function chiudiMenu() {
   document.getElementById("sideMenu").style.width = "0";
  }
+
  function cambiaTemaDitta() {
   const ditta = document.getElementById('ditta').value;
   const root = document.documentElement;
@@ -172,12 +197,44 @@
    root.style.setProperty('--btn-guided', '#d40511');
   }
  }
+
+ function pulisciCampo(id) {
+  const el = document.getElementById(id);
+  el.value = '';
+  if (id === 'comune') {
+   comuneSelezionato = "";
+   const indInput = document.getElementById('indirizzo');
+   indInput.value = '';
+   indInput.disabled = true;
+   indInput.placeholder = "Seleziona prima il comune...";
+  }
+  el.focus();
+ }
+
+ // GESTIONE IMMEDIATA AL CARICAMENTO (Non aspetta API esterne)
  window.addEventListener('DOMContentLoaded', () => {
   cambiaTemaDitta();
+  
+  // Sblocco del campo indirizzo automatico non appena digiti il comune
+  document.getElementById('comune').addEventListener('input', function() {
+   const val = this.value.trim();
+   const indInput = document.getElementById('indirizzo');
+   if (val === "") {
+    comuneSelezionato = "";  
+    indInput.value = "";
+    indInput.disabled = true;
+    indInput.placeholder = "Seleziona prima il comune...";
+   } else {
+    indInput.disabled = false;
+    indInput.placeholder = "Inserisci via in " + val;
+   }
+  });
  });  
  
+ // --- FUNZIONI LOGICHE (TAPPE E MAPPE) ---
  function initAutocomplete() {
   try {
+   if (typeof google === 'undefined') return;
    geocoder = new google.maps.Geocoder();
    autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
    autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
@@ -194,38 +251,17 @@
      indInput.placeholder = "Via in " + comuneSelezionato;
     }
    });
-   
-   document.getElementById('comune').addEventListener('input', function() {
-    const val = this.value.trim();
-    const indInput = document.getElementById('indirizzo');
-    if (val === "") {
-     comuneSelezionato = "";  
-     indInput.value = "";
-     indInput.disabled = true;
-     indInput.placeholder = "Seleziona prima il comune...";
-    } else {
-     indInput.disabled = false;
-     indInput.placeholder = "Inserisci via...";
-    }
-   });
-  } catch (e) { console.error("Errore:", e); }
- }
- 
- function pulisciCampo(id) {
-  const el = document.getElementById(id);
-  el.value = '';
-  if (id === 'comune') {
-   comuneSelezionato = "";
-   const indInput = document.getElementById('indirizzo');
-   indInput.value = '';
-   indInput.disabled = true;
-   indInput.placeholder = "Seleziona prima il comune...";
+  } catch (e) {
+   console.warn("L'autocompletamento di Google è attualmente inattivo, ma puoi inserire l'indirizzo manualmente.", e);
   }
-  el.focus();
  }
  
  function geocodeAddress(address) {
   return new Promise((resolve) => {
+   if (typeof google === 'undefined' || !google.maps) {
+     resolve(null);
+     return;
+   }
    if (!geocoder) { geocoder = new google.maps.Geocoder(); }
    geocoder.geocode({ address: address }, (results, status) => {  
     if (status === 'OK' && results && results[0] && results[0].geometry) {
@@ -245,14 +281,19 @@
   let lat = null;
   let lng = null;
   
-  const place = autocompleteInd.getPlace();
-  if (place && place.geometry && place.geometry.location) {
-   lat = place.geometry.location.lat();
-   lng = place.geometry.location.lng();
-  } else {
-   const coords = await geocodeAddress(indirizzoCompleto);
-   if (coords) { lat = coords.lat; lng = coords.lng; }
-  }
+  try {
+   if (autocompleteInd) {
+    const place = autocompleteInd.getPlace();
+    if (place && place.geometry && place.geometry.location) {
+     lat = place.geometry.location.lat();
+     lng = place.geometry.location.lng();
+    }
+   }
+   if (!lat || !lng) {
+    const coords = await geocodeAddress(indirizzoCompleto);
+    if (coords) { lat = coords.lat; lng = coords.lng; }
+   }
+  } catch (e) { console.warn("Geocodifica in errore o API mancante, la tappa verrà comunque aggiunta.", e); }
   
   tappe.push({ indirizzo: indirizzoCompleto, note: noteInput, cliccata: false, fatta: false, selezionata: false, lat: lat, lng: lng });
   document.getElementById('indirizzo').value = '';
@@ -326,7 +367,7 @@
   if (tappe[i].fatta) return;
   tappe[i].cliccata = true;
   render();
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
+  const url = `[https://www.google.com/maps/dir/?api=1&destination=$](https://www.google.com/maps/dir/?api=1&destination=$){encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
   window.open(url, '_blank');
  }  
  
@@ -363,7 +404,7 @@
    
    tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
    render();
-  }, () => alert("Impossibile ottenere la posizione."));
+  }, () => alert("Impossibile ottenere la posizione per il GPS."));
  }
  
  function aggiornaPulsanteGuida() {
@@ -380,9 +421,7 @@
   }
  }
 
- // =====================================================================
- // LETTURA ETICHETTA CON FILTRO DESTINATARIO E POPUP
- // =====================================================================
+ // --- FOTOCAMERA CLOUD VISION OCR (Totalmente protetta) ---
  const API_KEY_VISION = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI"; 
 
  document.getElementById('cameraOCR').addEventListener('change', async function(e) {
@@ -401,52 +440,4 @@
    });
    const cleanedBase64 = base64Image.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
 
-   const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY_VISION}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-     requests: [{ image: { content: cleanedBase64 }, features: [{ type: 'TEXT_DETECTION' }] }]
-    })
-   });
-
-   const data = await response.json();
-   
-   if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
-    const text = data.responses[0].fullTextAnnotation.text;
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    
-    // 1. TROVA L'INIZIO DEL DESTINATARIO (Scarta il mittente)
-    let startIndex = 0;
-    const destKeywords = ['DESTINATARIO', 'DEST.', 'SPEDIRE A', 'CONSEGNARE A', 'TO:'];
-    for (let i = 0; i < lines.length; i++) {
-     if (destKeywords.some(kw => lines[i].toUpperCase().includes(kw))) {
-      startIndex = i + 1; // Parti dalla riga successiva
-      break;
-     }
-    }
-    
-    // Isola le righe del destinatario (esamina le 6 righe successive)
-    const targetLines = lines.slice(startIndex, startIndex + 6);
-    let estrattoVia = "";
-    let estrattoComune = "";
-    
-    for (let line of targetLines) {
-     // 2. CERCA LA VIA (Inizia con Via, Viale, Piazza, Corso, ecc.)
-     if (!estrattoVia && /^(Via|Viale|Piazza|P\.zza|Corso|C\.so|Strada|Traversa|Vico|Largo|Contrada|C\.da)\b/i.test(line)) {
-      estrattoVia = line;
-     }
-     
-     // 3. CERCA IL COMUNE (Cerca il CAP a 5 cifre e prende il testo successivo)
-     const capMatch = line.match(/\b\d{5}\b\s+([A-Za-z\s'\-]+)(?:\s*[A-Z]{2}\b|\s*\([A-Z]{2}\))?/i);
-     if (!estrattoComune && capMatch) {
-      estrattoComune = capMatch[1].trim(); 
-     }
-    }
-    
-    // Fallback: se ha trovato la via ma non il comune, prova a prendere la riga sotto la via
-    if (estrattoVia && !estrattoComune) {
-       const viaIndex = targetLines.indexOf(estrattoVia);
-       if (viaIndex !== -1 && viaIndex + 1 < targetLines.length) {
-           let nextLine = targetLines[viaIndex + 1];
-           // Pulisce eventuali rimasugli di CAP o Province non agganciati prima
    
