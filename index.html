@@ -1037,4 +1037,1088 @@ async function gestisciFotoLdV(event) {
         '🔎 Sto leggendo la lettera di vettura...';
 
 
-    t
+    try {
+
+        if (typeof Tesseract === 'undefined') {
+
+            throw new Error(
+                'Motore OCR non disponibile.'
+            );
+
+        }
+
+
+        const risultato =
+            await Tesseract.recognize(
+                file,
+                'ita+eng',
+                {
+
+                    logger: m => {
+
+                        if (
+                            m &&
+                            m.status ===
+                            'recognizing text' &&
+                            typeof m.progress ===
+                            'number'
+                        ) {
+
+                            status.textContent =
+                                `🔎 Lettura lettera di vettura... ${Math.round(m.progress * 100)}%`;
+
+                        }
+
+                    }
+
+                }
+            );
+
+
+        const testo =
+            (
+                risultato.data &&
+                risultato.data.text
+            )
+            ?
+            risultato.data.text
+            :
+            '';
+
+
+        const candidato =
+            estraiIndirizzoDaOCR(testo);
+
+
+        if (!candidato) {
+
+            status.style.display = 'none';
+
+            alert(
+                'Non sono riuscito a riconoscere con sufficiente certezza l\'indirizzo. Prova a fotografare più da vicino la zona del destinatario.'
+            );
+
+            return;
+
+        }
+
+
+        apriPopupOCR(
+            candidato,
+            testo
+        );
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+        alert(
+            'Errore durante la lettura della lettera di vettura. Riprova con una foto più nitida.'
+        );
+
+    }
+
+    finally {
+
+        btn.disabled = false;
+
+        status.style.display = 'none';
+
+    }
+
+}
+
+
+/* ========================= */
+/* NORMALIZZA OCR */
+/* ========================= */
+
+function normalizzaTestoOCR(testo) {
+
+    return testo
+        .replace(/\r/g, '')
+        .split('\n')
+        .map(
+            r =>
+                r
+                    .replace(/[|]{2,}/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+        )
+        .filter(Boolean);
+
+}
+
+
+/* ========================= */
+/* TROVA INDIRIZZO */
+/* ========================= */
+
+function estraiIndirizzoDaOCR(testo) {
+
+    const righe =
+        normalizzaTestoOCR(testo);
+
+
+    const paroleVia =
+        /(via|viale|piazza|piazzale|corso|lungomare|largo|vicolo|strada|contrada|traversa|borgo|calle|rotonda|loc\.?|localit[aà])\b/i;
+
+
+    const righeCandidati = [];
+
+
+    for (
+        let i = 0;
+        i < righe.length;
+        i++
+    ) {
+
+        let r = righe[i];
+
+
+        if (paroleVia.test(r)) {
+
+            righeCandidati.push({
+                r,
+                i,
+                score: 10
+            });
+
+        }
+
+
+        if (/\b\d{5}\b/.test(r)) {
+
+            righeCandidati.push({
+                r,
+                i,
+                score: 7
+            });
+
+        }
+
+
+        if (
+            /\b\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(r) &&
+            righe[i - 1] &&
+            paroleVia.test(righe[i - 1])
+        ) {
+
+            righeCandidati.push({
+
+                r:
+                    righe[i - 1] +
+                    ' ' +
+                    r,
+
+                i: i - 1,
+
+                score: 12
+
+            });
+
+        }
+
+    }
+
+
+    if (!righeCandidati.length) {
+
+        return '';
+
+    }
+
+
+    righeCandidati.sort(
+        (a, b) =>
+            b.score - a.score
+    );
+
+
+    let candidato =
+        righeCandidati[0].r;
+
+
+    candidato =
+        candidato.replace(
+            /^(destinatario|consegna|indirizzo|address|shipping address)\s*[:\-]?\s*/i,
+            ''
+        )
+        .trim();
+
+
+    return candidato.slice(
+        0,
+        180
+    );
+
+}
+
+
+/* ========================= */
+/* POPUP OCR */
+/* ========================= */
+
+function apriPopupOCR(
+    indirizzo,
+    testoCompleto
+) {
+
+    document
+        .getElementById('ocrAddressInput')
+        .value = indirizzo;
+
+
+    document
+        .getElementById('ocrRawText')
+        .textContent =
+            testoCompleto ||
+            'Nessun testo OCR disponibile.';
+
+
+    document
+        .getElementById('ocrModal')
+        .style.display = 'flex';
+
+
+    setTimeout(
+        () =>
+            document
+                .getElementById(
+                    'ocrAddressInput'
+                )
+                .focus(),
+        100
+    );
+
+}
+
+
+function chiudiOCR() {
+
+    document
+        .getElementById('ocrModal')
+        .style.display = 'none';
+
+}
+
+
+/* ========================= */
+/* CONFERMA INDIRIZZO OCR */
+/* ========================= */
+
+function confermaOCR() {
+
+    const valore =
+        document
+            .getElementById(
+                'ocrAddressInput'
+            )
+            .value
+            .trim();
+
+
+    if (!valore) {
+
+        alert(
+            'Inserisci o correggi l\'indirizzo prima di confermare.'
+        );
+
+        return;
+
+    }
+
+
+    document
+        .getElementById('indirizzo')
+        .value = valore;
+
+
+    chiudiOCR();
+
+
+    /* 
+       Dopo la conferma viene
+       automaticamente aggiunta
+       la consegna alla lista.
+    */
+
+    aggiungiTappa();
+
+}
+
+
+/* ================================================= */
+/* AGGIUNGI TAPPA                                    */
+/* ================================================= */
+
+async function aggiungiTappa() {
+
+    let com =
+        comuneSelezionato ||
+        document
+            .getElementById('comune')
+            .value
+            .trim();
+
+
+    const indInput =
+        document
+            .getElementById('indirizzo')
+            .value
+            .trim();
+
+
+    const noteInput =
+        document
+            .getElementById('note')
+            .value
+            .trim();
+
+
+    if (!com || !indInput) {
+
+        alert(
+            "Inserisci sia il comune che l'indirizzo!"
+        );
+
+        return;
+
+    }
+
+
+    const indirizzoCompleto =
+        `${indInput}, ${com}`;
+
+
+    let lat = null;
+
+    let lng = null;
+
+
+    const place =
+        autocompleteInd
+            ?
+            autocompleteInd.getPlace()
+            :
+            null;
+
+
+    if (
+        place &&
+        place.geometry &&
+        place.geometry.location
+    ) {
+
+        lat =
+            place.geometry.location.lat();
+
+        lng =
+            place.geometry.location.lng();
+
+    }
+
+    else {
+
+        const coords =
+            await geocodeAddress(
+                indirizzoCompleto
+            );
+
+
+        if (coords) {
+
+            lat = coords.lat;
+
+            lng = coords.lng;
+
+        }
+
+    }
+
+
+    tappe.push({
+
+        indirizzo:
+            indirizzoCompleto,
+
+        note:
+            noteInput,
+
+        cliccata:
+            false,
+
+        fatta:
+            false,
+
+        selezionata:
+            false,
+
+        lat:
+            lat,
+
+        lng:
+            lng
+
+    });
+
+
+    document
+        .getElementById('indirizzo')
+        .value = '';
+
+
+    document
+        .getElementById('note')
+        .value = '';
+
+
+    render();
+
+}
+
+
+/* ================================================= */
+/* RENDER LISTA                                      */
+/* ================================================= */
+
+function render() {
+
+    const list =
+        document.getElementById('lista');
+
+    const batchBar =
+        document.getElementById('batch-bar');
+
+
+    list.innerHTML = '';
+
+
+    if (tappe.length > 0) {
+
+        batchBar.style.display =
+            'flex';
+
+    }
+
+    else {
+
+        batchBar.style.display =
+            'none';
+
+        document
+            .getElementById(
+                'seleziona-tutti'
+            )
+            .checked = false;
+
+    }
+
+
+    tappe.forEach(
+        (t, i) => {
+
+            let classeStato = '';
+
+
+            if (t.fatta) {
+
+                classeStato =
+                    'fatta';
+
+            }
+
+            else if (t.cliccata) {
+
+                classeStato =
+                    'evidenziata';
+
+            }
+
+
+            list.innerHTML += `
+
+                <div
+                    class="tappa ${classeStato}"
+                    onclick="apriNavigatore(${i})"
+                >
+
+                    <div class="tappa-left">
+
+                        <div class="tappa-text">
+
+                            <input
+                                type="checkbox"
+                                ${t.selezionata ? 'checked' : ''}
+                                onclick="event.stopPropagation(); toggleSelezionaTappa(${i}, this)"
+                            >
+
+                            <span>
+                                <strong>
+                                    ${i + 1}.
+                                </strong>
+
+                                ${t.indirizzo}
+                            </span>
+
+                        </div>
+
+                        ${
+                            t.note
+                            ?
+                            `<span class="tappa-note">
+                                📝 ${t.note}
+                            </span>`
+                            :
+                            ''
+                        }
+
+                    </div>
+
+                    <button
+                        class="btn-del"
+                        onclick="event.stopPropagation(); rimuoviTappa(${i})"
+                    >
+                        X
+                    </button>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    aggiornaPulsanteGuida();
+
+}
+
+
+/* ================================================= */
+/* SELEZIONE TAPPE                                   */
+/* ================================================= */
+
+function toggleSelezionaTappa(
+    i,
+    checkbox
+) {
+
+    tappe[i].selezionata =
+        checkbox.checked;
+
+
+    const tuttiSelezionati =
+        tappe.length > 0 &&
+        tappe.every(
+            t => t.selezionata
+        );
+
+
+    document
+        .getElementById(
+            'seleziona-tutti'
+        )
+        .checked =
+            tuttiSelezionati;
+
+}
+
+
+function toggleSelezionaTutti(
+    checkbox
+) {
+
+    const stato =
+        checkbox.checked;
+
+
+    tappe.forEach(
+        t =>
+            t.selezionata =
+                stato
+    );
+
+
+    render();
+
+}
+
+
+/* ================================================= */
+/* FATTA                                           */
+/* ================================================= */
+
+function toggleFattaSelezionate() {
+
+    const selezionate =
+        tappe.filter(
+            t => t.selezionata
+        );
+
+
+    if (
+        selezionate.length === 0
+    ) {
+
+        alert(
+            "Seleziona almeno una tappa."
+        );
+
+        return;
+
+    }
+
+
+    const tutteFatte =
+        selezionate.every(
+            t => t.fatta
+        );
+
+
+    selezionate.forEach(
+        t => {
+
+            t.fatta =
+                !tutteFatte;
+
+
+            if (!tutteFatte) {
+
+                t.cliccata =
+                    false;
+
+            }
+
+        }
+    );
+
+
+    render();
+
+}
+
+
+/* ================================================= */
+/* EVIDENZIA                                        */
+/* ================================================= */
+
+function toggleEvidenziaSelezionate() {
+
+    const selezionate =
+        tappe.filter(
+            t => t.selezionata
+        );
+
+
+    if (
+        selezionate.length === 0
+    ) {
+
+        alert(
+            "Seleziona almeno una tappa."
+        );
+
+        return;
+
+    }
+
+
+    const tutteEvidenziate =
+        selezionate.every(
+            t => t.cliccata
+        );
+
+
+    selezionate.forEach(
+        t => {
+
+            t.cliccata =
+                !tutteEvidenziate;
+
+        }
+    );
+
+
+    render();
+
+}
+
+
+/* ================================================= */
+/* ELIMINA                                          */
+/* ================================================= */
+
+function eliminaSelezionate() {
+
+    const daEliminare =
+        tappe.filter(
+            t => t.selezionata
+        ).length;
+
+
+    if (
+        daEliminare === 0
+    ) {
+
+        alert(
+            "Seleziona almeno una tappa."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        confirm(
+            `Vuoi eliminare ${daEliminare} tappe?`
+        )
+    ) {
+
+        tappe =
+            tappe.filter(
+                t => !t.selezionata
+            );
+
+
+        document
+            .getElementById(
+                'seleziona-tutti'
+            )
+            .checked = false;
+
+
+        render();
+
+    }
+
+}
+
+
+/* ================================================= */
+/* RIMUOVI TAPPA                                    */
+/* ================================================= */
+
+function rimuoviTappa(i) {
+
+    tappe.splice(
+        i,
+        1
+    );
+
+    render();
+
+}
+
+
+/* ================================================= */
+/* NAVIGATORE                                       */
+/* ================================================= */
+
+function apriNavigatore(i) {
+
+    if (
+        tappe[i].fatta
+    ) {
+
+        return;
+
+    }
+
+
+    tappe[i].cliccata =
+        true;
+
+
+    render();
+
+
+    const url =
+        `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
+
+
+    window.open(
+        url,
+        '_blank'
+    );
+
+}
+
+
+/* ================================================= */
+/* DISTANZA                                         */
+/* ================================================= */
+
+function calcolaDistanza(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+) {
+
+    const R = 6371;
+
+
+    const dLat =
+        (lat2 - lat1) *
+        Math.PI /
+        180;
+
+
+    const dLon =
+        (lon2 - lon1) *
+        Math.PI /
+        180;
+
+
+    const a =
+        Math.sin(dLat / 2) *
+        Math.sin(dLat / 2) +
+
+        Math.cos(
+            lat1 * Math.PI / 180
+        ) *
+
+        Math.cos(
+            lat2 * Math.PI / 180
+        ) *
+
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+
+    return R *
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+}
+
+
+/* ================================================= */
+/* OTTIMIZZA GIRO                                   */
+/* ================================================= */
+
+async function ottimizzaGiro() {
+
+    if (
+        tappe.length === 0
+    ) {
+
+        alert(
+            "Aggiungi almeno una via!"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !navigator.geolocation
+    ) {
+
+        alert(
+            "GPS non supportato."
+        );
+
+        return;
+
+    }
+
+
+    navigator.geolocation.getCurrentPosition(
+
+        async (pos) => {
+
+            const userLat =
+                pos.coords.latitude;
+
+
+            const userLng =
+                pos.coords.longitude;
+
+
+            let nonFatte =
+                tappe.filter(
+                    t => !t.fatta
+                );
+
+
+            if (
+                nonFatte.length === 0
+            ) {
+
+                alert(
+                    "Tutte le tappe sono state completate!"
+                );
+
+                return;
+
+            }
+
+
+            for (
+                let t of nonFatte
+            ) {
+
+                if (
+                    t.lat === null ||
+                    t.lng === null
+                ) {
+
+                    const coords =
+                        await geocodeAddress(
+                            t.indirizzo
+                        );
+
+
+                    if (coords) {
+
+                        t.lat =
+                            coords.lat;
+
+                        t.lng =
+                            coords.lng;
+
+                    }
+
+                }
+
+            }
+
+
+            nonFatte.sort(
+                (a, b) => {
+
+                    const distA =
+                        (
+                            a.lat &&
+                            a.lng
+                        )
+                        ?
+                        calcolaDistanza(
+                            userLat,
+                            userLng,
+                            a.lat,
+                            a.lng
+                        )
+                        :
+                        99999;
+
+
+                    const distB =
+                        (
+                            b.lat &&
+                            b.lng
+                        )
+                        ?
+                        calcolaDistanza(
+                            userLat,
+                            userLng,
+                            b.lat,
+                            b.lng
+                        )
+                        :
+                        99999;
+
+
+                    return distA - distB;
+
+                }
+            );
+
+
+            tappe =
+                [
+                    ...nonFatte,
+                    ...tappe.filter(
+                        t => t.fatta
+                    )
+                ];
+
+
+            render();
+
+        },
+
+        () => {
+
+            alert(
+                "Impossibile ottenere la posizione."
+            );
+
+        }
+
+    );
+
+}
+
+
+/* ================================================= */
+/* PULSANTE GUIDA                                   */
+/* ================================================= */
+
+function aggiornaPulsanteGuida() {
+
+    const btn =
+        document.getElementById(
+            'btn-guided'
+        );
+
+
+    btn.style.display =
+        tappe.length > 0
+        ?
+        'block'
+        :
+        'none';
+
+}
+
+
+/* ================================================= */
+/* INIZIA GIRO                                      */
+/* ================================================= */
+
+function avanzaiGiro() {
+
+    const prossima =
+        tappe.find(
+            t => !t.fatta
+        );
+
+
+    if (prossima) {
+
+        const index =
+            tappe.indexOf(
+                prossima
+            );
+
+
+        apriNavigatore(
+            index
+        );
+
+    }
+
+    else {
+
+        alert(
+            "Giro terminato!"
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
