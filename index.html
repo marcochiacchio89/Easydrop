@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyDrop - Gestione Consegne & Scan Etichette</title>
+    <title>EasyDrop - Gestione Consegne</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -18,7 +18,8 @@
         h1 { font-size: 1.4rem; margin-bottom: 15px; text-align: center; color: var(--primary); }
         .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border); }
         label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 10px; }
+        input[type="text"], input[type="file"], select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; margin-bottom: 15px; background-color: #fff; }
+        input:disabled { background-color: #e9ecef; cursor: not-allowed; }
         .btn-group { display: flex; gap: 10px; }
         button { flex: 1; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; }
         button:hover { background: var(--primary-hover); }
@@ -26,26 +27,48 @@
         button.danger { background: #ef4444; }
         #map { width: 100%; height: 250px; border-radius: 8px; margin-top: 10px; }
         .stop-list { list-style: none; margin-top: 10px; }
-        .stop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
+        .stop-item { display: flex; flex-direction: column; padding: 10px; border-bottom: 1px solid var(--border); gap: 5px; }
         .stop-item:last-child { border-bottom: none; }
+        .stop-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .stop-details { font-size: 0.9rem; color: #475569; }
         .loading { display: none; text-align: center; color: var(--primary); font-weight: bold; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-    <h1>EasyDrop - Delivery & OCR Scan</h1>
+    <h1>EasyDrop - Inserimento Spedizione</h1>
 
     <div class="card">
-        <label for="addressInput">📍 Indirizzo o Scansione Etichetta</label>
-        <input type="text" id="addressInput" placeholder="Inserisci o seleziona indirizzo...">
+        <!-- CAMPO DITTA -->
+        <label for="dittaInput">🏢 Ditta (Opzionale)</label>
+        <input type="text" id="dittaInput" placeholder="Nome della ditta o negozio...">
+
+        <!-- SELEZIONE COMUNE -->
+        <label for="comuneSelect">📍 Comune di Consegna</label>
+        <select id="comuneSelect" onchange="sbloccaIndirizzo()">
+            <option value="">-- Seleziona un Comune --</option>
+            <option value="Marcianise">Marcianise</option>
+            <option value="Sant'Arpino">Sant'Arpino</option>
+            <option value="Caserta">Caserta</option>
+            <option value="Maddaloni">Maddaloni</option>
+            <option value="Capua">Capua</option>
+            <option value="Aversa">Aversa</option>
+            <option value="Napoli">Napoli</option>
+            <!-- Aggiungi qui sotto gli altri comuni della tua zona -->
+        </select>
+
+        <!-- CAMPO INDIRIZZO -->
+        <label for="addressInput">🏠 Indirizzo</label>
+        <input type="text" id="addressInput" placeholder="Prima seleziona il comune in alto..." disabled>
         
-        <label for="cameraInput">📷 Scansiona Etichetta Pacco</label>
+        <!-- FOTOCAMERA -->
+        <label for="cameraInput">📷 Scansiona Etichetta Pacco (Autocompila)</label>
         <input type="file" id="cameraInput" accept="image/*" capture="environment">
 
-        <div id="loading" class="loading">⏳ Lettura etichetta / elaborazione in corso...</div>
+        <div id="loading" class="loading">⏳ Lettura etichetta in corso...</div>
 
-        <div class="btn-group" style="margin-top: 10px;">
-            <button onclick="addStop()">Aggiungi Fermata</button>
+        <div class="btn-group" style="margin-top: 5px;">
+            <button onclick="addStop()">Aggiungi alla Lista</button>
         </div>
     </div>
 
@@ -64,54 +87,61 @@
 
     <script>
         // =========================================================================
-        // 🔑 INSERISCI LA TUA CHIAVE API GOOGLE QUI (UNICO PUNTO IN TUTTO IL CODICE)
+        // 🔑 INSERISCI LA TUA CHIAVE API GOOGLE QUI (UNICO PUNTO)
         // =========================================================================
         const API_KEY_GOOGLE = "AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI";
         // =========================================================================
 
         let map, autocomplete, directionsService, directionsRenderer;
-        let stops = [];
+        let stopsData = []; // Array per salvare tutti i dettagli (ditta, comune, indirizzo)
+        let routePoints = []; // Array solo per gli indirizzi da passare alla mappa
 
-        // Caricamento dinamico dello script Google Maps
+        // Sblocca il campo indirizzo solo dopo aver scelto il comune
+        function sbloccaIndirizzo() {
+            const comune = document.getElementById("comuneSelect").value;
+            const inputIndirizzo = document.getElementById("addressInput");
+            
+            if (comune !== "") {
+                inputIndirizzo.disabled = false;
+                inputIndirizzo.placeholder = "Digita la via...";
+            } else {
+                inputIndirizzo.disabled = true;
+                inputIndirizzo.value = "";
+                inputIndirizzo.placeholder = "Prima seleziona il comune in alto...";
+            }
+        }
+
         function loadGoogleMapsScript() {
             if (!API_KEY_GOOGLE || API_KEY_GOOGLE === "INSERISCI_LA_TUA_CHIAVE_API_QUI") {
-                alert("⚠️ ATTENZIONE: Inserisci la tua API Key all'inizio del codice nella variabile 'const API_KEY_GOOGLE'!");
+                alert("⚠️ ATTENZIONE: Inserisci la tua API Key all'inizio del codice!");
                 return;
             }
             const script = document.createElement('script');
             script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY_GOOGLE}&libraries=places&callback=initMap`;
             script.async = true;
             script.defer = true;
-            script.onerror = () => alert("Errore nel caricamento di Google Maps. Verifica che l'API Key sia corretta e attiva.");
             document.head.appendChild(script);
         }
 
-        // Inizializzazione Mappa e Autocomplete
         function initMap() {
-            const defaultCenter = { lat: 40.963, lng: 14.288 }; // Caserta / Marcianise
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 12,
-                center: defaultCenter,
-            });
+            const defaultCenter = { lat: 41.033, lng: 14.298 }; // Mappa centrata in zona
+            map = new google.maps.Map(document.getElementById("map"), { zoom: 11, center: defaultCenter });
 
             directionsService = new google.maps.DirectionsService();
             directionsRenderer = new google.maps.DirectionsRenderer();
             directionsRenderer.setMap(map);
 
             const input = document.getElementById("addressInput");
-            autocomplete = new google.maps.places.Autocomplete(input);
-            autocomplete.bindTo("bounds", map);
+            // Restringiamo l'autocomplete all'Italia
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: "it" }
+            });
         }
 
         // Gestione OCR Cloud Vision
         document.getElementById('cameraInput').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
-            if (!API_KEY_GOOGLE || API_KEY_GOOGLE === "INSERISCI_LA_TUA_CHIAVE_API_QUI") {
-                alert("Inserisci prima la tua API Key nella variabile in alto!");
-                return;
-            }
 
             showLoading(true);
             try {
@@ -122,10 +152,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        requests: [{
-                            image: { content: cleanedBase64 },
-                            features: [{ type: 'TEXT_DETECTION' }]
-                        }]
+                        requests: [{ image: { content: cleanedBase64 }, features: [{ type: 'TEXT_DETECTION' }] }]
                     })
                 });
 
@@ -133,12 +160,13 @@
                 
                 if (data.responses && data.responses[0] && data.responses[0].fullTextAnnotation) {
                     const detectedText = data.responses[0].fullTextAnnotation.text;
+                    // Mette il testo grezzo nell'indirizzo da farti sistemare
                     document.getElementById('addressInput').value = extractAddress(detectedText);
+                    document.getElementById('addressInput').disabled = false; // Forza sblocco per editare
                 } else {
                     alert("Nessun testo letto con chiarezza sull'etichetta.");
                 }
             } catch (err) {
-                console.error(err);
                 alert("Errore nella lettura della foto con la Cloud Vision API.");
             } finally {
                 showLoading(false);
@@ -156,16 +184,30 @@
 
         function extractAddress(text) {
             const lines = text.split('\n').filter(line => line.trim().length > 3);
-            return lines.slice(0, 3).join(' ');
+            return lines.slice(0, 3).join(', ');
         }
 
         function addStop() {
-            const input = document.getElementById("addressInput");
-            const val = input.value.trim();
-            if (!val) return;
+            const ditta = document.getElementById("dittaInput").value.trim();
+            const comune = document.getElementById("comuneSelect").value;
+            const indirizzo = document.getElementById("addressInput").value.trim();
 
-            stops.push(val);
-            input.value = "";
+            if (!comune || !indirizzo) {
+                alert("Devi selezionare un comune e inserire l'indirizzo!");
+                return;
+            }
+
+            // Uniamo comune e indirizzo per Google Maps
+            const fullAddress = `${indirizzo}, ${comune}`;
+
+            stopsData.push({ ditta, comune, indirizzo });
+            routePoints.push(fullAddress);
+
+            // Svuota i campi dopo l'inserimento
+            document.getElementById("dittaInput").value = "";
+            document.getElementById("addressInput").value = "";
+            // Il comune lo lasciamo selezionato, comodo se devi fare più pacchi nello stesso paese
+            
             renderStops();
             updateRoute();
         }
@@ -173,33 +215,47 @@
         function renderStops() {
             const list = document.getElementById("stopList");
             list.innerHTML = "";
-            stops.forEach((stop, idx) => {
+            stopsData.forEach((stop, idx) => {
                 const li = document.createElement("li");
                 li.className = "stop-item";
-                li.innerHTML = `<span><b>${idx + 1}.</b> ${stop}</span> <button class="secondary" style="padding: 4px 8px; flex: initial;" onclick="removeStop(${idx})">❌</button>`;
+                
+                let titleHtml = stop.ditta ? `<b>${idx + 1}. 🏢 ${stop.ditta}</b>` : `<b>${idx + 1}. 🏠 Privato</b>`;
+                
+                li.innerHTML = `
+                    <div class="stop-header">
+                        <span>${titleHtml}</span>
+                        <button class="secondary" style="padding: 4px 8px; flex: initial;" onclick="removeStop(${idx})">❌</button>
+                    </div>
+                    <div class="stop-details">
+                        📍 ${stop.indirizzo}<br>
+                        🏙️ ${stop.comune}
+                    </div>
+                `;
                 list.appendChild(li);
             });
         }
 
         function removeStop(idx) {
-            stops.splice(idx, 1);
+            stopsData.splice(idx, 1);
+            routePoints.splice(idx, 1);
             renderStops();
             updateRoute();
         }
 
         function clearStops() {
-            stops = [];
+            stopsData = [];
+            routePoints = [];
             renderStops();
             if (directionsRenderer) directionsRenderer.setDirections({ routes: [] });
         }
 
         function updateRoute() {
-            if (stops.length < 2 || !directionsService) return;
+            if (routePoints.length < 2 || !directionsService) return;
             
-            const waypoints = stops.slice(1, -1).map(s => ({ location: s, stopover: true }));
+            const waypoints = routePoints.slice(1, -1).map(s => ({ location: s, stopover: true }));
             directionsService.route({
-                origin: stops[0],
-                destination: stops[stops.length - 1],
+                origin: routePoints[0],
+                destination: routePoints[routePoints.length - 1],
                 waypoints: waypoints,
                 optimizeWaypoints: true,
                 travelMode: google.maps.TravelMode.DRIVING
@@ -214,7 +270,6 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
-        // Inizio caricamento automatico
         loadGoogleMapsScript();
     </script>
 </body>
