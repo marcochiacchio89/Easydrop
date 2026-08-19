@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EasyDrop PRO V 3.5</title>
+<title>EasyDrop PRO V 4.0</title>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
 
@@ -403,7 +403,7 @@ select {
 <div class="container">
 
     <div class="app-header">
-        <h2>EasyDrop PRO V 3.5 📦</h2>
+        <h2>EasyDrop PRO V 4.0 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
@@ -930,13 +930,30 @@ function estraiIndirizzoDaOCR(testo) {
     let viaTrovata = "";
     let comuneTrovato = "";
 
-    // 1. Cerca la riga della via e del civico
-    for (let i = 0; i < righe.length; i++) {
-        let r = righe[i];
+    // 1. ISOLIAMO IL DESTINATARIO
+    // Cerchiamo la riga che contiene "Destinatario" per scartare il Mittente
+    let indiceDestinatario = righe.findIndex(r => r.toLowerCase().includes('destinatario'));
+    let righeDestinatario = righe;
+
+    if (indiceDestinatario !== -1) {
+        // Tagliamo il testo: teniamo solo le righe da "Destinatario" in poi
+        righeDestinatario = righe.slice(indiceDestinatario);
+    } else {
+        // Fallback: se l'OCR non legge bene la parola "destinatario", 
+        // cerchiamo "Mittente" e saltiamo le sue 3-4 righe di indirizzo
+        let indiceMittente = righe.findIndex(r => r.toLowerCase().includes('mittente'));
+        if (indiceMittente !== -1 && righe.length > indiceMittente + 3) {
+            righeDestinatario = righe.slice(indiceMittente + 3);
+        }
+    }
+
+    // 2. CERCHIAMO LA VIA (solo nel blocco del destinatario)
+    for (let i = 0; i < righeDestinatario.length; i++) {
+        let r = righeDestinatario[i];
         if (paroleVia.test(r)) {
             let indirizzoCompletoRiga = r;
-            if (i + 1 < righe.length && /^\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righe[i+1]) && !paroleVia.test(righe[i+1])) {
-                indirizzoCompletoRiga += ' ' + righe[i+1];
+            if (i + 1 < righeDestinatario.length && /^\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righeDestinatario[i+1]) && !paroleVia.test(righeDestinatario[i+1])) {
+                indirizzoCompletoRiga += ' ' + righeDestinatario[i+1];
             }
             viaTrovata = indirizzoCompletoRiga;
             break;
@@ -944,17 +961,21 @@ function estraiIndirizzoDaOCR(testo) {
     }
 
     if (!viaTrovata) {
-        for (let i = 0; i < righe.length; i++) {
-            if (/\b\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righe[i]) && i > 0 && paroleVia.test(righe[i-1])) {
-                viaTrovata = righe[i-1] + ' ' + righe[i];
+        for (let i = 0; i < righeDestinatario.length; i++) {
+            if (/\b\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righeDestinatario[i]) && i > 0 && paroleVia.test(righeDestinatario[i-1])) {
+                viaTrovata = righeDestinatario[i-1] + ' ' + righeDestinatario[i];
                 break;
             }
         }
     }
 
-    // 2. Cerca il comune tramite il CAP a 5 cifre
-    for (let j = 0; j < righe.length; j++) {
-        let r = righe[j];
+    // 3. CERCHIAMO IL COMUNE (sempre solo nel blocco del destinatario)
+    for (let j = 0; j < righeDestinatario.length; j++) {
+        let r = righeDestinatario[j];
+        
+        // Ignoriamo la parola "CAP" isolata per evitare interferenze con il riquadro in alto a sinistra
+        if (r.toLowerCase().includes('cap')) continue;
+
         const capMatch = r.match(/\b(\d{5})\b/);
         if (capMatch) {
             let pulito = r.replace(capMatch[0], '').replace(/\b[A-Z]{2}\b/g, '').replace(/[()]/g, '').trim();
