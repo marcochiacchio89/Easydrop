@@ -126,19 +126,23 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <!-- MENU HAMBURGER -->
 <div id="sideMenu" class="side-menu">
 <button class="close-btn" onclick="chiudiMenu()">&times;</button>
-<div class="menu-item">Lingua: 
-    <select id="lingua" style="margin-top:5px;">
-        <option value="it">Italiano</option><option value="en">English</option><option value="fr">Français</option><option value="de">Deutsch</option>
+<a href="#" onclick="chiudiMenu(); alert('Sezione Profilo utente');" id="menuProfilo">👤 Profilo</a>
+<a href="#" onclick="chiudiMenu(); alert('Abbonamenti VIP a breve');" id="menuVip">💎 Abbonamenti VIP</a>
+<a href="#" onclick="chiudiMenu(); alert('Pass Giornaliero');" id="menuPass">🎫 Pass Giornaliero</a>
+<a href="#" onclick="chiudiMenu(); alert('Supporto');" id="menuSupporto">🎧 Supporto</a>
+<div class="menu-item" id="lblLinguaMenu">Lingua: 
+    <select id="lingua" onchange="cambiaLingua()" style="margin-top:5px;">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
     </select>
 </div>
-<div class="menu-item"><button onclick="toggleOneHanded()" style="width:100%; padding:10px;">✋ Modalità 1 Mano</button></div>
-<a href="#" onclick="chiudiMenu(); alert('Abbonamenti VIP a breve');">💎 Abbonamenti VIP</a>
-<a href="#" onclick="chiudiMenu(); alert('Pass Giornaliero');">🎫 Pass Giornaliero</a>
-<a href="#" onclick="chiudiMenu(); alert('Supporto');">🎧 Supporto</a>
+<div class="menu-item"><button onclick="toggleOneHanded()" style="width:100%; padding:10px;" id="btn1Mano">✋ Modalità 1 Mano</button></div>
 </div>
 
 <div class="input-section">
-<label>Ditta:</label>
+<label id="lblDitta">Ditta:</label>
 <select id="ditta" onchange="cambiaTemaDitta()">
 <option value="SDA">SDA</option>
 <option value="BRT">BRT</option>
@@ -152,13 +156,13 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <button type="button" class="btn-camera" id="btnCamera" onclick="apriFotocamera()">📷 Scansiona Lettera di Vettura</button>
 <div id="scanStatus" class="scan-status">🔎 Elaborazione immagine in corso...</div>
 
-<label>Comune:</label>
+<label id="lblComune">Comune:</label>
 <div class="input-container">
 <input type="text" id="comune" placeholder="Scrivi il comune..." style="padding-right: 40px;">
 <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
 </div>
 
-<label>Indirizzo (Via e Civico):</label>
+<label id="lblIndirizzo">Indirizzo (Via e Civico):</label>
 <div class="input-container">
 <input type="text" id="indirizzo" placeholder="Scrivi la via e il civico...">
 <button type="button" class="mic-btn" onclick="avviaMic()" title="Usa il microfono">🎙️</button>
@@ -166,14 +170,14 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 </div>
 <input id="cameraInput" type="file" accept="image/*" capture="environment" onchange="gestisciFotoLdV(event)"> 
 
-<label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chkRitiro" style="width:20px;height:20px;margin:0;"> Contrassegna come RITIRO</label>
-<label>Note (facoltativo):</label>
+<label style="display:flex; align-items:center; gap:8px;" id="lblRitiro"><input type="checkbox" id="chkRitiro" style="width:20px;height:20px;margin:0;"> Contrassegna come RITIRO</label>
+<label id="lblNote">Note (facoltativo):</label>
 <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
 
-<button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
+<button class="btn btn-add" id="btnAddTappa" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
 
 <div style="display: flex; gap: 8px; margin-top: 10px;">
-    <button class="btn btn-opt" style="margin-top: 0;" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
+    <button class="btn btn-opt" id="btnOptGiro" style="margin-top: 0;" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button class="btn" style="background: #6c757d; color: white; width: auto; padding: 0 15px; margin-top: 0; font-size: 20px;" onclick="apriPopupGPS()" title="Impostazioni GPS">⚙️</button>
 </div>
 
@@ -182,9 +186,9 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 
 <div id="batch-bar" class="batch-actions" style="display:none;">
 <label style="margin:0; display: flex; align-items:center; gap:8px; cursor:pointer;">
-<input type="checkbox" id="seleziona-tutti" style="width:20px;height:20px;" onclick="toggleSelezionaTutti(this)"> <strong>Seleziona Tutti</strong>
+<input type="checkbox" id="seleziona-tutti" style="width:20px;height:20px;" onclick="toggleSelezionaTutti(this)"> <strong id="lblSelezionaTutti">Seleziona Tutti</strong>
 </label>
-<button class="btn-batch-del" onclick="eliminaSelezionate()">🗑️ Elimina</button>
+<button class="btn-batch-del" id="btnEliminaSelezionate" onclick="eliminaSelezionate()">🗑️ Elimina</button>
 </div>
 <div id="lista" style="margin-top:15px;"></div>
 <button id="btn-clean" class="btn-clean" onclick="svuotaCompletate()">🧹 Rimuovi Consegne Fatte</button>
@@ -193,14 +197,36 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <!-- POPUP IMPOSTAZIONI GPS -->
 <div id="gpsModal" class="modal-backdrop" role="dialog">
     <div class="modal">
-        <h3>⚙️ Impostazioni Percorso</h3>
-        <p>Inserisci i punti di partenza e arrivo per ottimizzare il giro.</p>
-        <label>Punto Partenza:</label>
+        <h3 id="gpsModalTitle">⚙️ Impostazioni Percorso</h3>
+        <p id="gpsModalDesc">Inserisci i punti di partenza e arrivo per ottimizzare il giro.</p>
+        <label id="lblGpsStart">Punto Partenza:</label>
         <input type="text" id="cfg_start" placeholder="Lascia vuoto per usare il tuo GPS">
-        <label>Punto Arrivo:</label>
+        <label id="lblGpsEnd">Punto Arrivo:</label>
         <input type="text" id="cfg_end" placeholder="Es. Filiale SDA">
         <div class="modal-actions">
-            <button class="btn-confirm" style="width:100%" onclick="chiudiPopupGPS()">Salva e Chiudi</button>
+            <button class="btn-confirm" id="btnGpsSave" style="width:100%" onclick="chiudiPopupGPS()">Salva e Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- POPUP MODIFICA TAPPA -->
+<div id="editModal" class="modal-backdrop" role="dialog">
+    <div class="modal">
+        <h3 id="editModalTitle">✏️ Modifica Tappa</h3>
+        <label id="lblEditComune">Comune:</label>
+        <div class="input-container" style="margin-bottom: 6px;">
+            <input type="text" id="editComune" placeholder="Modifica comune...">
+        </div>
+        <label id="lblEditIndirizzo">Indirizzo:</label>
+        <div class="input-container" style="margin-bottom: 6px;">
+            <input type="text" id="editIndirizzo" placeholder="Modifica indirizzo...">
+        </div>
+        <label id="lblEditNote">Note:</label>
+        <input type="text" id="editNote" placeholder="Modifica note...">
+        <label style="display:flex; align-items:center; gap:8px; margin-top:10px;" id="lblEditRitiro"><input type="checkbox" id="editRitiro" style="width:20px;height:20px;margin:0;"> Contrassegna come RITIRO</label>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="btnEditCancel" onclick="chiudiPopupModifica()">Annulla</button>
+            <button class="btn-confirm" id="btnEditConfirm" onclick="salvaModificaTappa()">Conferma</button>
         </div>
     </div>
 </div>
@@ -208,16 +234,16 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <!-- POPUP OCR -->
 <div id="ocrModal" class="modal-backdrop" role="dialog">
 <div class="modal">
-<h3>Indirizzo rilevato</h3>
-<p>Controlla l'indirizzo. Verrà verificato su Mappe prima della conferma.</p>
+<h3 id="ocrModalTitle">Indirizzo rilevato</h3>
+<p id="ocrModalDesc">Controlla l'indirizzo. Verrà verificato su Mappe prima della conferma.</p>
 <div id="map-ocr-container"></div>
-<label style="font-size:12px; color:#555; margin-top:5px;">Comune:</label>
+<label id="ocrLblComune" style="font-size:12px; color:#555; margin-top:5px;">Comune:</label>
 <input type="text" id="ocrComunePopup" placeholder="Es. Milano">
-<label style="font-size:12px; color:#555; margin-top:5px;">Indirizzo (Via e Civico):</label>
+<label id="ocrLblIndirizzo" style="font-size:12px; color:#555; margin-top:5px;">Indirizzo (Via e Civico):</label>
 <input type="text" id="ocrIndirizzoPopup" placeholder="Es. Via Roma 10">
 <div class="ocr-preview" id="ocrRawText"></div>
 <div class="modal-actions">
-<button class="btn-cancel" onclick="chiudiOCR()">Annulla</button>
+<button class="btn-cancel" id="ocrBtnCancel" onclick="chiudiOCR()">Annulla</button>
 <button class="btn-confirm" id="btnConfermaPopup" onclick="confermaOCR()">Conferma</button>
 </div>
 </div>
@@ -229,10 +255,96 @@ let globalCounter = parseInt(localStorage.getItem('globalCounter')) || 1;
 let geocoder;
 let autocompleteComune, autocompleteInd;
 let autocompletePopupComune, autocompletePopupInd;
+let autocompleteEditComune, autocompleteEditInd;
 let autocompleteGpsStart, autocompleteGpsEnd;
 let comuneSelezionato = "";
 let mapOcr, markerOcr;
 let tappaInNavigazione = -1;
+let indiceInModifica = -1;
+
+const dizionario = {
+    it: {
+        profilo: "👤 Profilo", vip: "💎 Abbonamenti VIP", pass: "🎫 Pass Giornaliero", supporto: "🎧 Supporto",
+        lingua: "Lingua:", modalita1m: "✋ Modalità 1 Mano", ditta: "Ditta:", camera: "📷 Scansiona Lettera di Vettura",
+        comune: "Comune:", indirizzo: "Indirizzo (Via e Civico):", ritiro: "Contrassegna come RITIRO", note: "Note (facoltativo):",
+        aggiungi: "+ Aggiungi Tappa", ottima: "📍 Ottimizza Giro (GPS)", inizia: "INIZIA GIRO", completato: "GIRO COMPLETATO",
+        prossima: "EFFETTUA PROSSIMA CONSEGNA", restanti: "RESTANTI", selezionaTutti: "Seleziona Tutti", elimina: "🗑️ Elimina",
+        rimuoviFatte: "🧹 Rimuovi Consegne Fatte", gpsTitle: "⚙️ Impostazioni Percorso", gpsDesc: "Inserisci i punti di partenza e arrivo per ottimizzare il giro.",
+        partenza: "Punto Partenza:", arrivo: "Punto Arrivo:", salvaChiudi: "Salva e Chiudi", editTitle: "✏️ Modifica Tappa",
+        annulla: "Annulla", conferma: "Conferma", ocrTitle: "Indirizzo rilevato", ocrDesc: "Controlla l'indirizzo. Verrà verificato su Mappe prima della conferma."
+    },
+    en: {
+        profilo: "👤 Profile", vip: "💎 VIP Subscriptions", pass: "🎫 Daily Pass", supporto: "🎧 Support",
+        lingua: "Language:", modalita1m: "✋ One-Handed Mode", ditta: "Carrier:", camera: "📷 Scan Waybill",
+        comune: "City:", indirizzo: "Address (Street & Number):", ritiro: "Mark as PICKUP", note: "Notes (optional):",
+        aggiungi: "+ Add Stop", ottima: "📍 Optimize Route (GPS)", inizia: "START ROUTE", completato: "ROUTE COMPLETED",
+        prossima: "PERFORM NEXT DELIVERY", restanti: "REMAINING", selezionaTutti: "Select All", elimina: "🗑️ Delete",
+        rimuoviFatte: "🧹 Remove Completed Deliveries", gpsTitle: "⚙️ Route Settings", gpsDesc: "Enter start and end points to optimize the route.",
+        partenza: "Start Point:", arrivo: "End Point:", salvaChiudi: "Save & Close", editTitle: "✏️ Edit Stop",
+        annulla: "Cancel", conferma: "Confirm", ocrTitle: "Detected Address", ocrDesc: "Check the address. It will be verified on Maps before confirmation."
+    },
+    fr: {
+        profilo: "👤 Profil", vip: "💎 Abonnements VIP", pass: "🎫 Pass Journalier", supporto: "🎧 Support",
+        lingua: "Langue:", modalita1m: "✋ Mode Une Main", ditta: "Transporteur:", camera: "📷 Scanner Lettre de Voiture",
+        comune: "Ville:", indirizzo: "Adresse (Rue et Numéro):", ritiro: "Marquer comme ENLÈVEMENT", note: "Notes (facultatif):",
+        aggiungi: "+ Ajouter Arrêt", ottima: "📍 Optimiser l'Itinéraire (GPS)", inizia: "COMMENCER", completato: "ITINÉRAIRE TERMINÉ",
+        prossima: "EFFECTUER LIVRAISON SUIVANTE", restanti: "RESTANTS", selezionaTutti: "Tout Sélectionner", elimina: "🗑️ Supprimer",
+        rimuoviFatte: "🧹 Supprimer Livraisons Terminées", gpsTitle: "⚙️ Paramètres d'Itinéraire", gpsDesc: "Entrez le point de départ et d'arrivée.",
+        partenza: "Point de Départ:", arrivo: "Point d'Arrivée:", salvaChiudi: "Enregistrer & Fermer", editTitle: "✏️ Modifier Arrêt",
+        annulla: "Annuler", conferma: "Confirmer", ocrTitle: "Adresse Détectée", ocrDesc: "Vérifiez l'adresse sur les cartes."
+    },
+    de: {
+        profilo: "👤 Profil", vip: "💎 VIP-Abonnements", pass: "🎫 Tageskarte", supporto: "🎧 Support",
+        lingua: "Sprache:", modalita1m: "✋ Einhandmodus", ditta: "Frachtführer:", camera: "📷 Frachtbrief Scannen",
+        comune: "Stadt:", indirizzo: "Adresse (Straße & Hausnummer):", ritiro: "Als ABHOLUNG markieren", note: "Notizen (optional):",
+        aggiungi: "+ Stopp Hinzufügen", ottima: "📍 Route Optimieren (GPS)", inizia: "ROUTE STARTEN", completato: "ROUTE BEENDET",
+        prossima: "NÄCHSTE LIEFERUNG", restanti: "VERBLEIBEND", selezionaTutti: "Alle Auswählen", elimina: "🗑️ Löschen",
+        rimuoviFatte: "🧹 Erledigte Lieferungen Entfernen", gpsTitle: "⚙️ Routeneinstellungen", gpsDesc: "Start- und Endpunkt eingeben.",
+        partenza: "Startpunkt:", arrivo: "Endpunkt:", salvaChiudi: "Speichern & Schließen", editTitle: "✏️ Stopp Bearbeiten",
+        annulla: "Abbrechen", conferma: "Bestätigen", ocrTitle: "Erkannte Adresse", ocrDesc: "Adresse überprüfen."
+    }
+};
+
+function cambiaLingua() {
+    const lang = document.getElementById('lingua').value;
+    const t = dizionario[lang] || dizionario.it;
+    
+    document.getElementById('menuProfilo').textContent = t.profilo;
+    document.getElementById('menuVip').textContent = t.vip;
+    document.getElementById('menuPass').textContent = t.pass;
+    document.getElementById('menuSupporto').textContent = t.supporto;
+    document.getElementById('lblLinguaMenu').childNodes[0].nodeName === "#text" ? document.getElementById('lblLinguaMenu').childNodes[0].textContent = t.lingua + " " : null;
+    document.getElementById('btn1Mano').textContent = t.modalita1m;
+    document.getElementById('lblDitta').textContent = t.ditta;
+    document.getElementById('btnCamera').textContent = t.camera;
+    document.getElementById('lblComune').textContent = t.comune;
+    document.getElementById('lblIndirizzo').textContent = t.indirizzo;
+    document.getElementById('lblRitiro').lastChild.textContent = " " + t.ritiro;
+    document.getElementById('lblNote').textContent = t.note;
+    document.getElementById('btnAddTappa').textContent = t.aggiungi;
+    document.getElementById('btnOptGiro').textContent = t.ottima;
+    document.getElementById('lblSelezionaTutti').textContent = t.selezionaTutti;
+    document.getElementById('btnEliminaSelezionate').textContent = t.elimina;
+    document.getElementById('btn-clean').textContent = t.rimuoviFatte;
+    document.getElementById('gpsModalTitle').textContent = t.gpsTitle;
+    document.getElementById('gpsModalDesc').textContent = t.gpsDesc;
+    document.getElementById('lblGpsStart').textContent = t.partenza;
+    document.getElementById('lblGpsEnd').textContent = t.arrivo;
+    document.getElementById('btnGpsSave').textContent = t.salvaChiudi;
+    document.getElementById('editModalTitle').textContent = t.editTitle;
+    document.getElementById('lblEditComune').textContent = t.comune;
+    document.getElementById('lblEditIndirizzo').textContent = t.indirizzo;
+    document.getElementById('lblEditNote').textContent = t.note;
+    document.getElementById('lblEditRitiro').lastChild.textContent = " " + t.ritiro;
+    document.getElementById('btnEditCancel').textContent = t.annulla;
+    document.getElementById('btnEditConfirm').textContent = t.conferma;
+    document.getElementById('ocrModalTitle').textContent = t.ocrTitle;
+    document.getElementById('ocrModalDesc').textContent = t.ocrDesc;
+    document.getElementById('ocrLblComune').textContent = t.comune;
+    document.getElementById('ocrLblIndirizzo').textContent = t.indirizzo;
+    document.getElementById('ocrBtnCancel').textContent = t.annulla;
+    document.getElementById('btnConfermaPopup').textContent = t.conferma;
+}
 
 function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
 function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
@@ -260,6 +372,10 @@ autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('i
 autocompletePopupComune = new google.maps.places.Autocomplete(document.getElementById('ocrComunePopup'), { types: ['locality'], componentRestrictions: { country: 'it' } });
 autocompletePopupInd = new google.maps.places.Autocomplete(document.getElementById('ocrIndirizzoPopup'), { componentRestrictions: { country: 'it' } });
 
+// Autocomplete per il popup di modifica tappa
+autocompleteEditComune = new google.maps.places.Autocomplete(document.getElementById('editComune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
+autocompleteEditInd = new google.maps.places.Autocomplete(document.getElementById('editIndirizzo'), { componentRestrictions: { country: 'it' } });
+
 // Autocomplete per i campi del popup GPS
 autocompleteGpsStart = new google.maps.places.Autocomplete(document.getElementById('cfg_start'), { componentRestrictions: { country: 'it' } });
 autocompleteGpsEnd = new google.maps.places.Autocomplete(document.getElementById('cfg_end'), { componentRestrictions: { country: 'it' } });
@@ -268,6 +384,8 @@ autocompleteComune.addListener('place_changed', () => appostaLimitiMappa(autocom
 document.getElementById('comune').addEventListener('blur', () => forzaLimitiDaTesto('comune', autocompleteInd));
 autocompletePopupComune.addListener('place_changed', () => appostaLimitiMappa(autocompletePopupComune, autocompletePopupInd));
 document.getElementById('ocrComunePopup').addEventListener('blur', () => forzaLimitiDaTesto('ocrComunePopup', autocompletePopupInd));
+autocompleteEditComune.addListener('place_changed', () => appostaLimitiMappa(autocompleteEditComune, autocompleteEditInd));
+document.getElementById('editComune').addEventListener('blur', () => forzaLimitiDaTesto('editComune', autocompleteEditInd));
 
 mapOcr = new google.maps.Map(document.getElementById('map-ocr-container'), { zoom: 15, center: {lat: 41.9028, lng: 12.4964}, disableDefaultUI: true });
 markerOcr = new google.maps.Marker({ map: mapOcr });
@@ -407,6 +525,52 @@ document.getElementById('indirizzo').value = ""; document.getElementById('note')
 salvaERenderizza();
 }
 
+// GESTIONE POPUP MODIFICA TAPPA
+function modificaTappa(i) {
+indiceInModifica = i;
+const parts = tappe[i].indirizzo.split(', ');
+document.getElementById('editIndirizzo').value = parts[0] || '';
+document.getElementById('editComune').value = parts[1] || '';
+document.getElementById('editNote').value = tappe[i].note.replace('RITIRO ', '');
+document.getElementById('editRitiro').checked = tappe[i].ritiro;
+
+document.getElementById('editModal').style.display = 'flex';
+setTimeout(() => {
+    if (autocompleteEditComune) google.maps.event.trigger(autocompleteEditComune, 'place_changed');
+    if (autocompleteEditInd) google.maps.event.trigger(autocompleteEditInd, 'place_changed');
+}, 200);
+forzaLimitiDaTesto('editComune', autocompleteEditInd);
+}
+
+function chiudiPopupModifica() {
+document.getElementById('editModal').style.display = 'none';
+indiceInModifica = -1;
+}
+
+async function salvaModificaTappa() {
+if (indiceInModifica === -1) return;
+let com = document.getElementById('editComune').value.trim();
+let ind = document.getElementById('editIndirizzo').value.trim();
+let isRitiro = document.getElementById('editRitiro').checked;
+let rawNote = document.getElementById('editNote').value.trim();
+let finalNote = isRitiro ? `RITIRO ${rawNote}` : rawNote;
+
+if (!com || !ind) return alert("Inserisci comune e indirizzo!");
+const indirizzoCompleto = `${ind}, ${com}`;
+let lat = null, lng = null;
+const coords = await new Promise(r => geocoder.geocode({ address: indirizzoCompleto }, (res, stat) => r((stat === 'OK') ? res[0].geometry.location: null)));
+if (coords) { lat = coords.lat(); lng = coords.lng(); }
+
+tappe[indiceInModifica].indirizzo = indirizzoCompleto;
+tappe[indiceInModifica].note = finalNote;
+tappe[indiceInModifica].lat = lat;
+tappe[indiceInModifica].lng = lng;
+tappe[indiceInModifica].ritiro = isRitiro;
+
+chiudiPopupModifica();
+salvaERenderizza();
+}
+
 function salvaERenderizza() {
 localStorage.setItem('tappe', JSON.stringify(tappe));
 localStorage.setItem('globalCounter', globalCounter);
@@ -447,11 +611,13 @@ ${t.note ? `<span class="tappa-note">📝 ${t.note}</span>` : ''}
 `;
 });
 
+const lang = document.getElementById('lingua').value;
+const t = dizionario[lang] || dizionario.it;
 const nonFatteCount = tappe.length - fatteCount;
 const btnStart = document.getElementById('btn-guided');
 if(tappe.length > 0) {
 btnStart.style.display = 'block';
-btnStart.textContent = nonFatteCount === 0 ? "GIRO COMPLETATO" : (fatteCount === 0 ? "INIZIA GIRO" : `EFFETTUA PROSSIMA CONSEGNA (${nonFatteCount} RESTANTI)`);
+btnStart.textContent = nonFatteCount === 0 ? t.completato : (fatteCount === 0 ? t.inizia : `${t.prossima} (${nonFatteCount} ${t.restanti})`);
 } else { btnStart.style.display = 'none'; }
 document.getElementById('btn-clean').style.display = fatteCount > 0 ? 'block' : 'none';
 }
@@ -461,14 +627,6 @@ function toggleSeleziona(i) { tappe[i].selezionata = !tappe[i].selezionata; salv
 function toggleSelezionaTutti(cb) { tappe.forEach(t => t.selezionata = cb.checked); salvaERenderizza(); }
 function spostaTappa(i, dir) { const target = i + dir; if(target >= 0 && target < tappe.length) { [tappe[i], tappe[target]] = [tappe[target], tappe[i]]; salvaERenderizza(); } }
 function rimuoviTappa(i) { if(confirm("Eliminare questa tappa?")) { tappe.splice(i, 1); salvaERenderizza(); } }
-function modificaTappa(i) {
-const parts = tappe[i].indirizzo.split(', ');
-document.getElementById('indirizzo').value = parts[0] || '';
-document.getElementById('comune').value = parts[1] || '';
-document.getElementById('note').value = tappe[i].note.replace('RITIRO ', '');
-document.getElementById('chkRitiro').checked = tappe[i].ritiro;
-tappe.splice(i, 1); salvaERenderizza();
-}
 function eliminaSelezionate() {
 if(!tappe.some(t => t.selezionata)) return alert("Nessuna selezionata.");
 if(confirm("Eliminare le consegne selezionate?")) { tappe = tappe.filter(t => !t.selezionata); salvaERenderizza(); }
