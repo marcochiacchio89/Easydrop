@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EasyDrop PRO V 4.1</title>
+<title>EasyDrop PRO V 4.2</title>
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
 
@@ -33,7 +33,6 @@ body {
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
     position: relative;
 }
 
@@ -45,363 +44,96 @@ body {
     margin-bottom: 15px;
 }
 
-h2 {
-    text-align: center;
-    color: var(--text-main);
-    margin: 0;
-    flex-grow: 1;
-}
-
-.menu-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--text-main);
-    padding: 0 5px;
-}
+h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; }
+.menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 0 5px; }
 
 /* MENU LATERALE */
 .side-menu {
-    height: 100%;
-    width: 0;
-    position: fixed;
-    z-index: 1000;
-    top: 0;
-    right: 0;
-    background-color: #fff;
-    overflow-x: hidden;
-    transition: 0.3s;
-    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
-    padding-top: 60px;
+    height: 100%; width: 0; position: fixed; z-index: 1000; top: 0; right: 0;
+    background-color: #fff; overflow-x: hidden; transition: 0.3s;
+    box-shadow: -4px 0 10px rgba(0,0,0,0.2); padding-top: 60px;
 }
+.side-menu a { padding: 12px 20px; text-decoration: none; font-size: 16px; color: #333; display: block; border-bottom: 1px solid #eee; }
+.side-menu .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; border: none; background: none; cursor: pointer; }
 
-.side-menu a {
-    padding: 12px 20px;
-    text-decoration: none;
-    font-size: 16px;
-    color: #333;
-    display: block;
-    transition: 0.2s;
-    border-bottom: 1px solid #eee;
-}
+label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
+input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
 
-.side-menu a:hover {
-    background-color: #f1f1f1;
-    color: var(--primary-color);
-}
-
-.side-menu .close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 26px;
-    border: none;
-    background: none;
-    cursor: pointer;
-}
-
-label {
-    font-weight: bold;
-    font-size: 14px;
-    color: #555;
-    display: block;
-    margin-top: 10px;
-}
-
-input,
-select {
-    width: 100%;
-    padding: 12px;
-    padding-right: 35px;
-    margin: 6px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
-    font-size: 15px;
-}
-
-select {
-    padding-right: 12px;
-}
-
-.input-container {
-    position: relative;
-}
-
-.clear-btn {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #888;
-    font-size: 20px;
-    font-weight: bold;
-    padding: 0 5px;
-    user-select: none;
-}
-
-.clear-btn:hover {
-    color: #333;
-}
+.input-container { position: relative; }
+.clear-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 20px; font-weight: bold; }
 
 /* BOTTONI */
-.btn {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 15px;
-    margin-top: 10px;
-    transition: background 0.3s ease;
-}
-
-.btn-add {
-    background: var(--btn-add);
-    color: white;
-}
-
-.btn-opt {
-    background: var(--btn-opt);
-    color: white;
-}
-
-.btn-guided {
-    background: var(--btn-guided);
-    color: white;
-    display: none;
-    font-size: 16px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
-}
+.btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
+.btn-add { background: var(--btn-add); color: white; }
+.btn-opt { background: var(--btn-opt); color: white; }
+.btn-guided { background: var(--btn-guided); color: white; display: none; font-size: 16px; box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
 
 .btn-camera {
-    width: 100%;
-    margin: 15px 0 10px 0;
-    background: #6f42c1;
-    color: #fff;
-    padding: 14px;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 16px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    width: 100%; margin: 15px 0 10px 0; background: #6f42c1; color: #fff;
+    padding: 14px; border: none; border-radius: 6px; font-weight: bold;
+    cursor: pointer; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);
 }
+.btn-camera:disabled { opacity: 0.65; cursor: wait; }
+#cameraInput { display: none; }
+.scan-status { display: none; font-size: 13px; color: #6f42c1; font-weight: bold; text-align: center; margin-bottom: 10px; }
 
-.btn-camera:disabled {
-    opacity: 0.65;
-    cursor: wait;
+/* BARRA SELEZIONE BATCH */
+.batch-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 14px;
 }
-
-#cameraInput {
-    display: none;
-}
-
-.scan-status {
-    display: none;
-    font-size: 13px;
-    color: #6f42c1;
-    font-weight: bold;
-    margin-top: -5px;
-    margin-bottom: 10px;
-    text-align: center;
-}
+.btn-batch-del { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
 /* POPUP OCR */
-
-.modal-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    background: rgba(0,0,0,0.6);
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    box-sizing: border-box;
-}
-
-.modal {
-    width: 100%;
-    max-width: 470px;
-    background: #fff;
-    border-radius: 12px;
-    padding: 18px;
-    box-sizing: border-box;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-}
-
-.modal h3 {
-    margin: 0 0 8px;
-    color: var(--text-main);
-}
-
-.modal p {
-    margin: 5px 0 12px;
-    font-size: 13px;
-    color: #666;
-}
-
-.modal input {
-    margin: 6px 0;
-    padding-right: 12px;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 15px;
-}
-
-.modal-actions button {
-    flex: 1;
-    border: none;
-    border-radius: 6px;
-    padding: 12px;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.btn-confirm {
-    background: #28a745;
-    color: #fff;
-}
-
-.btn-cancel {
-    background: #e9ecef;
-    color: #333;
-}
-
-.ocr-preview {
-    font-size: 11px;
-    color: #777;
-    background: #f8f9fa;
-    padding: 8px;
-    border-radius: 6px;
-    max-height: 80px;
-    overflow: auto;
-    white-space: pre-wrap;
-    margin-top: 10px;
-}
+.modal-backdrop { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.modal { width: 100%; max-width: 470px; background: #fff; border-radius: 12px; padding: 18px; box-sizing: border-box; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+.modal h3 { margin: 0 0 8px; color: var(--text-main); }
+.modal p { margin: 5px 0 12px; font-size: 13px; color: #666; }
+.modal-actions { display: flex; gap: 8px; margin-top: 15px; }
+.modal-actions button { flex: 1; border: none; border-radius: 6px; padding: 12px; font-weight: bold; cursor: pointer; font-size: 14px; }
+.btn-confirm { background: #28a745; color: #fff; }
+.btn-cancel { background: #e9ecef; color: #333; }
+.ocr-preview { font-size: 11px; color: #777; background: #f8f9fa; padding: 8px; border-radius: 6px; max-height: 80px; overflow: auto; white-space: pre-wrap; margin-top: 10px; }
 
 /* TAPPE E LISTA */
 .tappa {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-left: 6px solid var(--primary-color);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px;
+    border-radius: 8px; background: #f8f9fa; border: 1px solid #e9ecef; border-left: 6px solid var(--primary-color);
 }
-
-.tappa-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-}
-
-.tappa-check {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    accent-color: #28a745;
-}
-
-.tappa-text-container {
-    display: flex;
-    flex-direction: column;
-}
-
-.tappa-indirizzo {
-    font-size: 15px;
-    color: #333;
-}
-
-.tappa-note {
-    font-size: 12px;
-    color: #666;
-    font-style: italic;
-    margin-top: 4px;
-}
+.tappa-left { display: flex; align-items: center; gap: 12px; flex: 1; overflow: hidden; }
+.tappa-check-select { width: 22px; height: 22px; cursor: pointer; }
+.tappa-text-container { display: flex; flex-direction: column; }
+.tappa-indirizzo { font-size: 15px; color: #333; }
+.tappa-note { font-size: 12px; color: #666; font-style: italic; margin-top: 4px; }
 
 /* Stato Fatta */
-.fatta {
-    background: #d4edda;
-    border-left-color: #28a745;
-    border-color: #c3e6cb;
-}
-.fatta .tappa-indirizzo {
-    text-decoration: line-through;
-    color: #6c757d;
-}
+.fatta { background: #d4edda; border-left-color: #28a745; border-color: #c3e6cb; opacity: 0.8; }
+.fatta .tappa-indirizzo { text-decoration: line-through; color: #6c757d; }
 
 /* Pulsanti Azione Riga */
-.tappa-azioni {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
+.tappa-azioni { display: flex; gap: 10px; align-items: center; }
+.check-fatta-container { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #28a745; cursor: pointer; }
+.tappa-check-fatta { width: 26px; height: 26px; cursor: pointer; accent-color: #28a745; margin-bottom: 2px; }
+.btn-nav-map { background: #007bff; color: white; border: none; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; }
+.btn-del-tappa { background: #dc3545; color: white; border: none; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; }
 
-.btn-nav-map {
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
-}
-
-.btn-del-tappa {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 10px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.btn-clean {
-    width: 100%;
-    margin-top: 15px;
-    padding: 10px;
-    background: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    display: none;
-}
+.btn-clean { width: 100%; margin-top: 15px; padding: 10px; background: #6c757d; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
     <div class="app-header">
-        <h2>EasyDrop PRO V 4.1 📦</h2>
+        <h2>EasyDrop PRO V 4.2 📦</h2>
         <button class="menu-btn" onclick="apriMenu()">☰</button>
     </div>
 
     <!-- MENU HAMBURGER -->
     <div id="sideMenu" class="side-menu">
         <button class="close-btn" onclick="chiudiMenu()">&times;</button>
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Profilo in arrivo');">👤 Profilo</a>
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Impostazioni in arrivo');">⚙️ Impostazioni</a>
-        <a href="#" onclick="chiudiMenu(); alert('Sezione Assistenza in arrivo');">️ Assistenza</a>
+        <a href="#" onclick="chiudiMenu(); alert('Profilo');">👤 Profilo</a>
+        <a href="#" onclick="chiudiMenu(); alert('Impostazioni');">⚙️ Impostazioni</a>
     </div>
 
     <label>Ditta:</label>
@@ -413,13 +145,10 @@ select {
         <option value="DHL">DHL</option>
     </select>
 
-    <!-- PULSANTE FOTOCAMERA SPOSTATO IN ALTO -->
     <button type="button" class="btn-camera" id="btnCamera" onclick="apriFotocamera()">
         📷 Scansiona Lettera di Vettura
     </button>
-    <div id="scanStatus" class="scan-status">
-        🔎 Elaborazione immagine in corso...
-    </div>
+    <div id="scanStatus" class="scan-status">🔎 Elaborazione immagine in corso...</div>
 
     <label>Comune:</label>
     <div class="input-container">
@@ -442,21 +171,24 @@ select {
     <button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
     <button id="btn-guided" class="btn btn-guided" onclick="avanzaiGiro()">🚀 INIZIA GIRO</button>
 
-    <div id="lista" style="margin-top:20px;"></div>
+    <!-- BARRA BATCH AZIONI -->
+    <div id="batch-bar" class="batch-actions" style="display:none;">
+        <label style="margin:0; display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="seleziona-tutti" style="width:20px;height:20px;" onclick="toggleSelezionaTutti(this)"> <strong>Seleziona Tutti</strong>
+        </label>
+        <button class="btn-batch-del" onclick="eliminaSelezionate()">🗑 Elimina Selezionate</button>
+    </div>
+
+    <div id="lista" style="margin-top:15px;"></div>
     
     <button id="btn-clean" class="btn-clean" onclick="svuotaCompletate()">🧹 Rimuovi Consegne Fatte</button>
-
 </div>
 
-
-<!-- ========================= -->
-<!-- POPUP CONFERMA OCR        -->
-<!-- ========================= -->
-
-<div id="ocrModal" class="modal-backdrop" role="dialog" aria-modal="true">
+<!-- POPUP OCR -->
+<div id="ocrModal" class="modal-backdrop" role="dialog">
     <div class="modal">
         <h3>📷 Indirizzo rilevato</h3>
-        <p>I campi sottostanti sono collegati alle mappe di Google. Correggi l'indirizzo se necessario.</p>
+        <p>Controlla l'indirizzo. Verrà verificato su Mappe prima della conferma.</p>
 
         <label style="font-size:12px; color:#555; margin-top:5px;">Comune:</label>
         <input type="text" id="ocrComunePopup" placeholder="Es. Milano">
@@ -468,11 +200,10 @@ select {
 
         <div class="modal-actions">
             <button class="btn-cancel" onclick="chiudiOCR()">Annulla</button>
-            <button class="btn-confirm" onclick="confermaOCR()">✅ Conferma</button>
+            <button class="btn-confirm" id="btnConfermaPopup" onclick="confermaOCR()">✅ Conferma</button>
         </div>
     </div>
 </div>
-
 
 <script>
 let tappe = [];
@@ -481,310 +212,195 @@ let autocompleteComune, autocompleteInd;
 let autocompletePopupComune, autocompletePopupInd;
 let comuneSelezionato = "";
 
-/* ========================= */
-/* MENU E TEMA               */
-/* ========================= */
 function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
 function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
 
 function cambiaTemaDitta() {
-    const ditta = document.getElementById('ditta').value;
-    const root = document.documentElement;
-
-    if (ditta === "SDA") {
-        root.style.setProperty('--bg-body', '#eef3f9');
-        root.style.setProperty('--primary-color', '#003366');
-        root.style.setProperty('--btn-add', '#003366');
-        root.style.setProperty('--btn-opt', '#d4af37');
-        root.style.setProperty('--btn-guided', '#003366');
-    }
-    else if (ditta === "BRT") {
-        root.style.setProperty('--bg-body', '#fcf2f2');
-        root.style.setProperty('--primary-color', '#cc0000');
-        root.style.setProperty('--btn-add', '#cc0000');
-        root.style.setProperty('--btn-opt', '#333333');
-        root.style.setProperty('--btn-guided', '#cc0000');
-    }
-    else if (ditta === "Poste Italiane") {
-        root.style.setProperty('--bg-body', '#fdfae5');
-        root.style.setProperty('--primary-color', '#004225');
-        root.style.setProperty('--btn-add', '#e6af00');
-        root.style.setProperty('--btn-opt', '#004225');
-        root.style.setProperty('--btn-guided', '#e6af00');
-    }
-    else if (ditta === "GLS") {
-        root.style.setProperty('--bg-body', '#f7f4f4');
-        root.style.setProperty('--primary-color', '#002060');
-        root.style.setProperty('--btn-add', '#002060');
-        root.style.setProperty('--btn-opt', '#c00000');
-        root.style.setProperty('--btn-guided', '#002060');
-    }
-    else if (ditta === "DHL") {
-        root.style.setProperty('--bg-body', '#fffbe6');
-        root.style.setProperty('--primary-color', '#d40511');
-        root.style.setProperty('--btn-add', '#d40511');
-        root.style.setProperty('--btn-opt', '#ffcc00');
-        root.style.setProperty('--btn-guided', '#d40511');
-    }
+    const d = document.getElementById('ditta').value, r = document.documentElement;
+    if(d==="SDA"){ r.style.setProperty('--bg-body','#eef3f9'); r.style.setProperty('--primary-color','#003366'); r.style.setProperty('--btn-add','#003366'); r.style.setProperty('--btn-opt','#d4af37'); r.style.setProperty('--btn-guided','#003366'); }
+    else if(d==="BRT"){ r.style.setProperty('--bg-body','#fcf2f2'); r.style.setProperty('--primary-color','#cc0000'); r.style.setProperty('--btn-add','#cc0000'); r.style.setProperty('--btn-opt','#333333'); r.style.setProperty('--btn-guided','#cc0000'); }
+    else if(d==="Poste Italiane"){ r.style.setProperty('--bg-body','#fdfae5'); r.style.setProperty('--primary-color','#004225'); r.style.setProperty('--btn-add','#e6af00'); r.style.setProperty('--btn-opt','#004225'); r.style.setProperty('--btn-guided','#e6af00'); }
+    else if(d==="GLS"){ r.style.setProperty('--bg-body','#f7f4f4'); r.style.setProperty('--primary-color','#002060'); r.style.setProperty('--btn-add','#002060'); r.style.setProperty('--btn-opt','#c00000'); r.style.setProperty('--btn-guided','#002060'); }
+    else if(d==="DHL"){ r.style.setProperty('--bg-body','#fffbe6'); r.style.setProperty('--primary-color','#d40511'); r.style.setProperty('--btn-add','#d40511'); r.style.setProperty('--btn-opt','#ffcc00'); r.style.setProperty('--btn-guided','#d40511'); }
 }
-window.addEventListener('DOMContentLoaded', () => { cambiaTemaDitta(); });
+window.addEventListener('DOMContentLoaded', cambiaTemaDitta);
 
-/* ========================= */
-/* GOOGLE AUTOCOMPLETE       */
-/* ========================= */
+/* ======================================= */
+/* INIT MAPS & RESTRINZIONI GEOGRAFICHE    */
+/* ======================================= */
 function initAutocomplete() {
-    try {
-        geocoder = new google.maps.Geocoder();
+    geocoder = new google.maps.Geocoder();
+    
+    // Autocomplete Home
+    autocompleteComune = new google.maps.places.Autocomplete(document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } });
+    autocompleteInd = new google.maps.places.Autocomplete(document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } });
 
-        // Autocomplete Home
-        autocompleteComune = new google.maps.places.Autocomplete(
-            document.getElementById('comune'), { types: ['locality'], componentRestrictions: { country: 'it' } }
-        );
-        autocompleteInd = new google.maps.places.Autocomplete(
-            document.getElementById('indirizzo'), { componentRestrictions: { country: 'it' } }
-        );
+    // Autocomplete Popup
+    autocompletePopupComune = new google.maps.places.Autocomplete(document.getElementById('ocrComunePopup'), { types: ['locality'], componentRestrictions: { country: 'it' } });
+    autocompletePopupInd = new google.maps.places.Autocomplete(document.getElementById('ocrIndirizzoPopup'), { componentRestrictions: { country: 'it' } });
 
-        autocompleteComune.addListener('place_changed', function() {
-            const place = autocompleteComune.getPlace();
-            if (place && place.name) comuneSelezionato = place.name;
-        });
+    // Quando selezioni il comune nella HOME, confina le vie
+    autocompleteComune.addListener('place_changed', () => appostaLimitiMappa(autocompleteComune, autocompleteInd));
+    // Quando scrivi manualmente a mano il comune ed esci dal campo
+    document.getElementById('comune').addEventListener('blur', () => forzaLimitiDaTesto('comune', autocompleteInd));
 
-        // Autocomplete Popup OCR
-        autocompletePopupComune = new google.maps.places.Autocomplete(
-            document.getElementById('ocrComunePopup'), { types: ['locality'], componentRestrictions: { country: 'it' } }
-        );
-        autocompletePopupInd = new google.maps.places.Autocomplete(
-            document.getElementById('ocrIndirizzoPopup'), { componentRestrictions: { country: 'it' } }
-        );
-
-    } catch (e) { console.error("Errore Mappe:", e); }
+    // Quando selezioni il comune nel POPUP, confina le vie
+    autocompletePopupComune.addListener('place_changed', () => appostaLimitiMappa(autocompletePopupComune, autocompletePopupInd));
+    // Quando scrivi manualmente nel popup
+    document.getElementById('ocrComunePopup').addEventListener('blur', () => forzaLimitiDaTesto('ocrComunePopup', autocompletePopupInd));
 }
 
-function pulisciCampo(id) {
-    const el = document.getElementById(id);
-    el.value = '';
-    if (id === 'comune') comuneSelezionato = "";
-    el.focus();
+function appostaLimitiMappa(autoComune, autoIndirizzo) {
+    const place = autoComune.getPlace();
+    if (place && place.name) comuneSelezionato = place.name;
+    if (place && place.geometry && place.geometry.viewport) {
+        autoIndirizzo.setBounds(place.geometry.viewport);
+        autoIndirizzo.setOptions({ strictBounds: true });
+    }
 }
 
-function geocodeAddress(address) {
-    return new Promise((resolve) => {
-        if (!geocoder) geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address: address }, (results, status) => {
-            if (status === 'OK' && results && results[0]) {
-                resolve({ lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng() });
-            } else { resolve(null); }
-        });
+function forzaLimitiDaTesto(inputId, autoIndirizzo) {
+    const val = document.getElementById(inputId).value;
+    if (!val || !geocoder) return;
+    geocoder.geocode({ address: val + ', Italia' }, (results, status) => {
+        if (status === 'OK' && results[0].geometry.viewport) {
+            autoIndirizzo.setBounds(results[0].geometry.viewport);
+            autoIndirizzo.setOptions({ strictBounds: true });
+        }
     });
 }
 
-/* ================================================= */
-/* FOTOCAMERA + GOOGLE CLOUD VISION OCR              */
-/* ================================================= */
-function apriFotocamera() {
-    document.getElementById('cameraInput').click();
-}
+function pulisciCampo(id) { document.getElementById(id).value = ''; if(id === 'comune') comuneSelezionato = ""; document.getElementById(id).focus(); }
+
+/* ======================================= */
+/* FOTOCAMERA OCR                          */
+/* ======================================= */
+function apriFotocamera() { document.getElementById('cameraInput').click(); }
 
 async function gestisciFotoLdV(event) {
-    const file = event.target.files && event.target.files[0];
-    event.target.value = '';
-    if (!file) return;
-
-    const btn = document.getElementById('btnCamera');
-    const status = document.getElementById('scanStatus');
-    btn.disabled = true;
-    status.style.display = 'block';
+    const file = event.target.files[0]; event.target.value = ''; if(!file) return;
+    const btn = document.getElementById('btnCamera'), status = document.getElementById('scanStatus');
+    btn.disabled = true; status.style.display = 'block';
 
     try {
-        const base64Image = await toBase64(file);
-        const imageContent = base64Image.split(',')[1];
-        const apiKey = estraiApiKeyMaps();
-
-        if (!apiKey || apiKey === "INSERISCI_LA_TUA_CHIAVE_API_QUI") throw new Error("Chiave API Google mancante.");
+        const base64Image = await toBase64(file), imageContent = base64Image.split(',')[1];
+        const apiKey = estraiApiKeyMaps(); if (!apiKey) throw new Error("Chiave API Google mancante.");
 
         const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                requests: [{ image: { content: imageContent }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }]
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requests: [{ image: { content: imageContent }, features: [{ type: 'DOCUMENT_TEXT_DETECTION' }] }] })
         });
-
         const data = await response.json();
         if (data.error) throw new Error(data.error.message);
 
-        const annotations = data.responses && data.responses[0];
-        const testo = (annotations && annotations.fullTextAnnotation && annotations.fullTextAnnotation.text) || '';
-
+        const testo = (data.responses[0]?.fullTextAnnotation?.text) || '';
         if (!testo) throw new Error("Nessun testo rilevato.");
 
         const risultatoOCR = estraiIndirizzoDaOCR(testo);
         apriPopupOCR(risultatoOCR.indirizzo, risultatoOCR.comune, testo);
 
-    } catch (err) {
-        console.error(err);
-        alert('Errore: ' + err.message);
-    } finally {
-        btn.disabled = false;
-        status.style.display = 'none';
-    }
+    } catch (err) { alert('Errore: ' + err.message); } 
+    finally { btn.disabled = false; status.style.display = 'none'; }
 }
-
-function toBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-
-function estraiApiKeyMaps() {
-    const scripts = document.getElementsByTagName('script');
-    for (let s of scripts) {
-        const src = s.getAttribute('src');
-        if (src && src.includes('maps.googleapis.com/maps/api/js')) {
-            return new URLSearchParams(src.split('?')[1]).get('key');
-        }
-    }
-    return null;
-}
-
-function normalizzaTestoOCR(testo) {
-    return testo.replace(/\r/g, '').split('\n').map(r => r.replace(/[|]{2,}/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
-}
+function toBase64(file) { return new Promise((r, j) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => r(reader.result); reader.onerror = e => j(e); }); }
+function estraiApiKeyMaps() { for (let s of document.getElementsByTagName('script')) { const src = s.getAttribute('src'); if (src && src.includes('maps/api/js')) return new URLSearchParams(src.split('?')[1]).get('key'); } return null; }
 
 function estraiIndirizzoDaOCR(testo) {
-    const righe = normalizzaTestoOCR(testo);
+    const righe = testo.replace(/\r/g, '').split('\n').map(r => r.replace(/[|]{2,}/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
     const paroleVia = /(via|viale|piazza|piazzale|corso|lungomare|largo|vicolo|strada|contrada|traversa|borgo|calle|rotonda|loc\.?|localit[aà])\b/i;
-    let viaTrovata = "";
-    let comuneTrovato = "";
-
-    let indiceDestinatario = righe.findIndex(r => r.toLowerCase().includes('destinatario'));
-    let righeDestinatario = righe;
-
-    if (indiceDestinatario !== -1) {
-        righeDestinatario = righe.slice(indiceDestinatario);
-    } else {
-        let indiceMittente = righe.findIndex(r => r.toLowerCase().includes('mittente'));
-        if (indiceMittente !== -1 && righe.length > indiceMittente + 3) {
-            righeDestinatario = righe.slice(indiceMittente + 3);
-        }
-    }
-
-    for (let i = 0; i < righeDestinatario.length; i++) {
-        let r = righeDestinatario[i];
-        if (paroleVia.test(r)) {
-            let indirizzoCompletoRiga = r;
-            if (i + 1 < righeDestinatario.length && /^\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righeDestinatario[i+1]) && !paroleVia.test(righeDestinatario[i+1])) {
-                indirizzoCompletoRiga += ' ' + righeDestinatario[i+1];
-            }
-            viaTrovata = indirizzoCompletoRiga;
+    let viaTrovata = "", comuneTrovato = "", idxDest = righe.findIndex(r => r.toLowerCase().includes('destinatario'));
+    let bloccoDest = (idxDest !== -1) ? righe.slice(idxDest) : righe;
+    
+    for (let i = 0; i < bloccoDest.length; i++) {
+        if (paroleVia.test(bloccoDest[i])) {
+            viaTrovata = bloccoDest[i];
+            if (i+1 < bloccoDest.length && /^\d{1,5}/.test(bloccoDest[i+1]) && !paroleVia.test(bloccoDest[i+1])) viaTrovata += ' ' + bloccoDest[i+1];
             break;
         }
     }
-
-    if (!viaTrovata) {
-        for (let i = 0; i < righeDestinatario.length; i++) {
-            if (/\b\d{1,5}(?:\s*[\/\-]\s*\d{1,5})?[A-Za-z]?\b/.test(righeDestinatario[i]) && i > 0 && paroleVia.test(righeDestinatario[i-1])) {
-                viaTrovata = righeDestinatario[i-1] + ' ' + righeDestinatario[i];
-                break;
-            }
-        }
+    for (let j = 0; j < bloccoDest.length; j++) {
+        if (bloccoDest[j].toLowerCase().includes('cap')) continue;
+        const cap = bloccoDest[j].match(/\b(\d{5})\b/);
+        if (cap) { comuneTrovato = bloccoDest[j].replace(cap[0], '').replace(/\b[A-Z]{2}\b/g, '').replace(/[()]/g, '').trim(); break; }
     }
-
-    for (let j = 0; j < righeDestinatario.length; j++) {
-        let r = righeDestinatario[j];
-        if (r.toLowerCase().includes('cap')) continue;
-        const capMatch = r.match(/\b(\d{5})\b/);
-        if (capMatch) {
-            let pulito = r.replace(capMatch[0], '').replace(/\b[A-Z]{2}\b/g, '').replace(/[()]/g, '').trim();
-            if (pulito.length > 2) { comuneTrovato = pulito; break; }
-        }
-    }
-
-    if (viaTrovata) viaTrovata = viaTrovata.replace(/^(destinatario|consegna|indirizzo|address|shipping address)\s*[:\-]?\s*/i, '').trim();
-
+    if (viaTrovata) viaTrovata = viaTrovata.replace(/^(destinatario|consegna|indirizzo|address)\s*[:\-]?\s*/i, '').trim();
     return { indirizzo: viaTrovata.slice(0, 100), comune: comuneTrovato.slice(0, 50) };
 }
 
-/* ========================= */
-/* POPUP OCR                 */
-/* ========================= */
+/* ======================================= */
+/* GESTIONE POPUP E VALIDAZIONE ESISTENZA  */
+/* ======================================= */
 function apriPopupOCR(indirizzo, comune, testoCompleto) {
     document.getElementById('ocrIndirizzoPopup').value = indirizzo || '';
     document.getElementById('ocrComunePopup').value = comune || '';
-    document.getElementById('ocrRawText').textContent = testoCompleto || 'Nessun testo OCR...';
+    document.getElementById('ocrRawText').textContent = testoCompleto || '';
     document.getElementById('ocrModal').style.display = 'flex';
+    forzaLimitiDaTesto('ocrComunePopup', autocompletePopupInd); // Applica limite al volo
 }
-
 function chiudiOCR() { document.getElementById('ocrModal').style.display = 'none'; }
 
-function confermaOCR() {
+async function confermaOCR() {
     const via = document.getElementById('ocrIndirizzoPopup').value.trim();
     const com = document.getElementById('ocrComunePopup').value.trim();
+    if (!via || !com) return alert("Inserisci via e comune.");
 
-    if (!via || !com) {
-        alert("Controlla di aver compilato sia la via che il comune prima di confermare.");
-        return;
-    }
+    const btnConf = document.getElementById('btnConfermaPopup');
+    btnConf.disabled = true; btnConf.textContent = "⏳ Verifica in corso...";
 
+    // Validazione rigorosa tramite Geocoder
+    try {
+        const res = await new Promise(r => geocoder.geocode({address: `${via}, ${com}`}, (results, status) => r((status === 'OK' && results) ? results[0] : null)));
+        
+        // Se Google dice che il match è "parziale" o "approssimativo" (es. manca il civico o non trova la strada esatta in quel comune)
+        if (!res || res.partial_match || (res.geometry.location_type === "APPROXIMATE" && !res.types.includes("route"))) {
+            const ok = confirm(`⚠️ ATTENZIONE: Questo indirizzo potrebbe NON esistere o essere incompleto su Google Maps.\n\nIndirizzo cercato: ${via}, ${com}\n\nSei assolutamente sicuro di volerlo confermare così?`);
+            if(!ok) {
+                btnConf.disabled = false; btnConf.textContent = "✅ Conferma";
+                return; // Ferma tutto, l'utente correggerà l'indirizzo
+            }
+        }
+    } catch(e) {}
+
+    btnConf.disabled = false; btnConf.textContent = "✅ Conferma";
     document.getElementById('indirizzo').value = via;
     document.getElementById('comune').value = com;
-    comuneSelezionato = com;
-
     chiudiOCR();
     aggiungiTappa();
 }
 
-/* ================================================= */
-/* AGGIUNGI TAPPA E RENDER                           */
-/* ================================================= */
+/* ======================================= */
+/* LOGICA LISTA E TAPPE                    */
+/* ======================================= */
 async function aggiungiTappa() {
-    let com = comuneSelezionato || document.getElementById('comune').value.trim();
-    let indInput = document.getElementById('indirizzo').value.trim();
+    let com = document.getElementById('comune').value.trim();
+    let ind = document.getElementById('indirizzo').value.trim();
+    if (!com || !ind) return alert("Inserisci comune e indirizzo!");
 
-    if (!com && indInput.includes(',')) {
-        const parti = indInput.split(',');
-        indInput = parti[0].trim();
-        com = parti.slice(1).join(',').trim();
-    }
-
-    if (!com || !indInput) { alert("Inserisci sia il comune che l'indirizzo!"); return; }
-
-    const indirizzoCompleto = `${indInput}, ${com}`;
+    const indirizzoCompleto = `${ind}, ${com}`;
     let lat = null, lng = null;
-    const place = autocompleteInd ? autocompleteInd.getPlace() : null;
+    const coords = await new Promise(r => geocoder.geocode({ address: indirizzoCompleto }, (res, stat) => r((stat === 'OK') ? res[0].geometry.location : null)));
+    if (coords) { lat = coords.lat(); lng = coords.lng(); }
 
-    if (place && place.geometry && place.geometry.location) {
-        lat = place.geometry.location.lat(); lng = place.geometry.location.lng();
-    } else {
-        const coords = await geocodeAddress(indirizzoCompleto);
-        if (coords) { lat = coords.lat; lng = coords.lng; }
-    }
-
-    tappe.push({
-        indirizzo: indirizzoCompleto, note: document.getElementById('note').value.trim(),
-        fatta: false, lat: lat, lng: lng
-    });
-
-    document.getElementById('indirizzo').value = '';
-    document.getElementById('note').value = '';
+    tappe.push({ indirizzo: indirizzoCompleto, note: document.getElementById('note').value.trim(), fatta: false, selezionata: false, lat: lat, lng: lng });
+    document.getElementById('indirizzo').value = ''; document.getElementById('note').value = '';
     render();
 }
 
 function render() {
-    const list = document.getElementById('lista');
-    list.innerHTML = '';
+    const list = document.getElementById('lista'); list.innerHTML = '';
     let fatteCount = 0;
+
+    // Visualizzazione barra Batch
+    document.getElementById('batch-bar').style.display = tappe.length > 0 ? 'flex' : 'none';
+    const tuttiSelezionati = tappe.length > 0 && tappe.every(t => t.selezionata);
+    document.getElementById('seleziona-tutti').checked = tuttiSelezionati;
 
     tappe.forEach((t, i) => {
         if (t.fatta) fatteCount++;
-        
         list.innerHTML += `
             <div class="tappa ${t.fatta ? 'fatta' : ''}">
                 <div class="tappa-left">
-                    <input type="checkbox" class="tappa-check" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})">
+                    <input type="checkbox" class="tappa-check-select" ${t.selezionata ? 'checked' : ''} onchange="toggleSeleziona(${i})">
                     <div class="tappa-text-container">
                         <span class="tappa-indirizzo"><strong>${i + 1}.</strong> ${t.indirizzo}</span>
                         ${t.note ? `<span class="tappa-note">📝 ${t.note}</span>` : ''}
@@ -792,70 +408,55 @@ function render() {
                 </div>
                 
                 <div class="tappa-azioni">
+                    <label class="check-fatta-container">
+                        <input type="checkbox" class="tappa-check-fatta" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})">
+                        Fatta
+                    </label>
                     <button class="btn-nav-map" onclick="apriNavigatore(${i})" title="Naviga">↗️ MAPS</button>
                     <button class="btn-del-tappa" onclick="rimuoviTappa(${i})" title="Elimina">🗑️</button>
                 </div>
             </div>
         `;
     });
-
     document.getElementById('btn-guided').style.display = tappe.length > 0 ? 'block' : 'none';
     document.getElementById('btn-clean').style.display = fatteCount > 0 ? 'block' : 'none';
 }
 
-function toggleFatta(i) {
-    tappe[i].fatta = !tappe[i].fatta;
-    render();
-}
+function toggleFatta(i) { tappe[i].fatta = !tappe[i].fatta; render(); }
+function toggleSeleziona(i) { tappe[i].selezionata = !tappe[i].selezionata; render(); }
+function toggleSelezionaTutti(cb) { tappe.forEach(t => t.selezionata = cb.checked); render(); }
 
 function rimuoviTappa(i) { tappe.splice(i, 1); render(); }
-
-function svuotaCompletate() {
-    tappe = tappe.filter(t => !t.fatta);
-    render();
+function eliminaSelezionate() {
+    if(!tappe.some(t => t.selezionata)) return alert("Nessuna consegna selezionata.");
+    if(confirm("Eliminare le consegne selezionate?")) { tappe = tappe.filter(t => !t.selezionata); render(); }
 }
+function svuotaCompletate() { tappe = tappe.filter(t => !t.fatta); render(); }
 
-/* ================================================= */
-/* NAVIGATORE E OTTIMIZZAZIONE                       */
-/* ================================================= */
-function apriNavigatore(i) {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`;
-    window.open(url, '_blank');
-}
+/* ======================================= */
+/* NAVIGATORE E GPS                        */
+/* ======================================= */
+function apriNavigatore(i) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`, '_blank'); }
 
 function calcolaDistanza(lat1, lon1, lat2, lon2) {
-    const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2)**2;
+    return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 async function ottimizzaGiro() {
-    if (tappe.length === 0) return alert("Aggiungi almeno una via!");
     if (!navigator.geolocation) return alert("GPS non supportato.");
-
     navigator.geolocation.getCurrentPosition(async (pos) => {
-        const userLat = pos.coords.latitude, userLng = pos.coords.longitude;
+        const uLat = pos.coords.latitude, uLng = pos.coords.longitude;
         let nonFatte = tappe.filter(t => !t.fatta);
-        if (nonFatte.length === 0) return alert("Tutte le tappe sono completate!");
-
-        for (let t of nonFatte) {
-            if (!t.lat || !t.lng) {
-                const coords = await geocodeAddress(t.indirizzo);
-                if (coords) { t.lat = coords.lat; t.lng = coords.lng; }
-            }
-        }
-        nonFatte.sort((a, b) => (a.lat ? calcolaDistanza(userLat, userLng, a.lat, a.lng) : 99999) - (b.lat ? calcolaDistanza(userLat, userLng, b.lat, b.lng) : 99999));
-        tappe = [...nonFatte, ...tappe.filter(t => t.fatta)];
-        render();
-    }, () => alert("Impossibile ottenere la posizione GPS."));
+        if (nonFatte.length === 0) return alert("Giro completato!");
+        for (let t of nonFatte) if (!t.lat) { const c = await new Promise(r => geocoder.geocode({address: t.indirizzo}, (res, st) => r((st==='OK')?res[0].geometry.location:null))); if(c) { t.lat=c.lat(); t.lng=c.lng(); } }
+        nonFatte.sort((a,b) => (a.lat ? calcolaDistanza(uLat, uLng, a.lat, a.lng) : 999) - (b.lat ? calcolaDistanza(uLat, uLng, b.lat, b.lng) : 999));
+        tappe = [...nonFatte, ...tappe.filter(t => t.fatta)]; render();
+    }, () => alert("GPS disattivato."));
 }
 
-function avanzaiGiro() {
-    const prossima = tappe.find(t => !t.fatta);
-    if (prossima) apriNavigatore(tappe.indexOf(prossima));
-    else alert("Giro terminato!");
-}
+function avanzaiGiro() { const p = tappe.find(t => !t.fatta); if (p) apriNavigatore(tappe.indexOf(p)); else alert("Giro terminato!"); }
 </script>
-
 </body>
 </html>
