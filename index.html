@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EasyDrop PRO V 5.0</title>
+<title>EasyDrop PRO V 5.1</title>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtVYWeIyin713t6mQOUhz3f7NnDS-CCvI&libraries=places&callback=initAutocomplete" async defer></script>
 <style>
 :root {
@@ -45,6 +45,7 @@ margin-bottom: 15px;
 } 
 h2 { text-align: center; color: var(--text-main); margin: 0; flex-grow: 1; }
 .menu-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-main); padding: 0 5px; }
+
 /* MENU LATERALE */
 .side-menu {
 height: 100%; width: 0; position: fixed; z-index: 1000; top: 0; right: 0;
@@ -54,11 +55,15 @@ box-shadow: -4px 0 10px rgba(0,0,0,0.2); padding-top: 60px;
 .side-menu a, .side-menu div.menu-item { padding: 12px 20px; text-decoration: none; font-size: 16px; color: #333; display: block; border-bottom: 1px solid #eee; }
 .side-menu input, .side-menu select { width: 90%; margin: 5px 20px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
 .side-menu .close-btn { position: absolute; top: 15px; right: 20px; font-size: 26px; border: none; background: none; cursor: pointer; }
+
 label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 10px; }
 input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-.input-container { position: relative; display: flex; align-items: center; }
-.clear-btn { position: absolute; right: 10px; cursor: pointer; color: #888; font-size: 20px; font-weight: bold; }
-.mic-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0 10px; }
+
+/* CAMPI INPUT CON X E MIC (Corretti) */
+.input-container { position: relative; display: flex; align-items: center; width: 100%; }
+.input-container input { width: 100%; padding-right: 70px; } /* Spazio per evitare che il testo finisca sotto le icone */
+.clear-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; font-size: 22px; font-weight: bold; padding: 5px; z-index: 2; }
+.mic-btn { position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; z-index: 2; }
 
 /* BOTTONI */
 .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; margin-top: 10px; }
@@ -74,7 +79,7 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 .batch-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 14px; } 
 .btn-batch-del { background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-/* POPUP OCR */
+/* POPUP (Generico per OCR e GPS) */
 .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
 .modal { width: 100%; max-width: 470px; background: #fff; border-radius: 12px; padding: 18px; box-sizing: border-box; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
 .modal h3 { margin: 0 0 8px; color: var(--text-main); }
@@ -99,7 +104,7 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 /* Pulsanti Azione Riga */
 .tappa-azioni { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .tappa-check-fatta { width: 26px; height: 26px; cursor: pointer; accent-color: #28a745; }
-.btn-icon { background: #e9ecef; border: none; border-radius: 4px; padding: 8px; font-size: 14px; cursor: pointer; }
+.btn-icon-small { background: #e9ecef; border: none; border-radius: 4px; padding: 8px; font-size: 14px; cursor: pointer; }
 .btn-nav-map { background: #007bff; color: white; border: none; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; }
 .btn-del-tappa { background: #dc3545; color: white; border: none; border-radius: 6px; padding: 10px; font-size: 16px; cursor: pointer; } 
 .btn-clean { width: 100%; margin-top: 15px; padding: 10px; background: #6c757d; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
@@ -110,7 +115,7 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <body>
 <div class="container">
 <div class="app-header">
-<h2>EasyDrop PRO V 5.0 📦</h2>
+<h2>EasyDrop PRO V 5.1 📦</h2>
 <button class="menu-btn" onclick="apriMenu()">☰</button>
 </div>
 
@@ -123,12 +128,6 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
     </select>
 </div>
 <div class="menu-item"><button onclick="toggleOneHanded()" style="width:100%; padding:10px;">✋ Modalità 1 Mano</button></div>
-<div class="menu-item">
-    <label>Punto Partenza:</label>
-    <input type="text" id="cfg_start" placeholder="Lascia vuoto per GPS">
-    <label>Punto Arrivo:</label>
-    <input type="text" id="cfg_end" placeholder="Es. Filiale SDA">
-</div>
 <a href="#" onclick="chiudiMenu(); alert('Abbonamenti VIP a breve');">💎 Abbonamenti VIP</a>
 <a href="#" onclick="chiudiMenu(); alert('Pass Giornaliero');">🎫 Pass Giornaliero</a>
 <a href="#" onclick="chiudiMenu(); alert('Supporto');">🎧 Supporto</a>
@@ -151,15 +150,15 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 
 <label>Comune:</label>
 <div class="input-container">
-<input type="text" id="comune" placeholder="Scrivi il comune...">
+<input type="text" id="comune" placeholder="Scrivi il comune..." style="padding-right: 40px;">
 <span class="clear-btn" onclick="pulisciCampo('comune')">&times;</span>
 </div>
 
 <label>Indirizzo (Via e Civico):</label>
 <div class="input-container">
 <input type="text" id="indirizzo" placeholder="Scrivi la via e il civico...">
-<button type="button" class="mic-btn" onclick="avviaMic()">🎙️</button>
-<span class="clear-btn" style="right: 40px;" onclick="pulisciCampo('indirizzo')">&times;</span>
+<button type="button" class="mic-btn" onclick="avviaMic()" title="Usa il microfono">🎙️</button>
+<span class="clear-btn" onclick="pulisciCampo('indirizzo')" title="Cancella">&times;</span>
 </div>
 <input id="cameraInput" type="file" accept="image/*" capture="environment" onchange="gestisciFotoLdV(event)"> 
 
@@ -168,7 +167,13 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 <input type="text" id="note" placeholder="es. Citofono Rossi, ZTL, Pacco blu...">
 
 <button class="btn btn-add" onclick="aggiungiTappa()">+ Aggiungi Tappa</button>
-<button class="btn btn-opt" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
+
+<!-- RIGA PULSANTI GPS E INGRANAGGIO -->
+<div style="display: flex; gap: 8px; margin-top: 10px;">
+    <button class="btn btn-opt" style="margin-top: 0;" onclick="ottimizzaGiro()">📍 Ottimizza Giro (GPS)</button>
+    <button class="btn" style="background: #6c757d; color: white; width: auto; padding: 0 15px; margin-top: 0; font-size: 20px;" onclick="apriPopupGPS()" title="Impostazioni GPS">⚙️</button>
+</div>
+
 <button id="btn-guided" class="btn btn-guided" onclick="avanzaGiro()">INIZIA GIRO</button>
 </div>
 
@@ -181,6 +186,21 @@ input, select { width: 100%; padding: 12px; margin: 6px 0; border: 1px solid #cc
 </div>
 <div id="lista" style="margin-top:15px;"></div>
 <button id="btn-clean" class="btn-clean" onclick="svuotaCompletate()">🧹 Rimuovi Consegne Fatte</button>
+</div>
+
+<!-- POPUP IMPOSTAZIONI GPS -->
+<div id="gpsModal" class="modal-backdrop" role="dialog">
+    <div class="modal">
+        <h3>⚙️ Impostazioni Percorso</h3>
+        <p>Inserisci i punti di partenza e arrivo per ottimizzare il giro.</p>
+        <label>Punto Partenza:</label>
+        <input type="text" id="cfg_start" placeholder="Lascia vuoto per usare il tuo GPS">
+        <label>Punto Arrivo:</label>
+        <input type="text" id="cfg_end" placeholder="Es. Filiale SDA">
+        <div class="modal-actions">
+            <button class="btn-confirm" style="width:100%" onclick="chiudiPopupGPS()">Salva e Chiudi</button>
+        </div>
+    </div>
 </div>
 
 <!-- POPUP OCR -->
@@ -210,9 +230,16 @@ let autocompletePopupComune, autocompletePopupInd;
 let comuneSelezionato = "";
 let mapOcr, markerOcr;
 
+/* Variabile per tracciare quale consegna stai effettuando su Maps */
+let tappaInNavigazione = -1;
+
 function apriMenu() { document.getElementById("sideMenu").style.width = "250px"; }
 function chiudiMenu() { document.getElementById("sideMenu").style.width = "0"; }
 function toggleOneHanded() { document.body.classList.toggle('one-handed'); chiudiMenu(); }
+
+/* GESTIONE POPUP GPS */
+function apriPopupGPS() { document.getElementById('gpsModal').style.display = 'flex'; }
+function chiudiPopupGPS() { document.getElementById('gpsModal').style.display = 'none'; }
 
 function cambiaTemaDitta() {
 const d = document.getElementById('ditta').value, r = document.documentElement;
@@ -408,7 +435,7 @@ ${t.note ? `<span class="tappa-note">📝 ${t.note}</span>` : ''}
 <label style="display:flex; flex-direction:column; align-items:center; font-size:10px; font-weight:bold; color:#28a745; margin:0; cursor:pointer;">
 <input type="checkbox" class="tappa-check-fatta" ${t.fatta ? 'checked' : ''} onchange="toggleFatta(${i})">Fatta
 </label>
-<button class="btn-icon" onclick="modificaTappa(${i})" title="Modifica">✏️</button>
+<button class="btn-icon-small" onclick="modificaTappa(${i})" title="Modifica">✏️</button>
 <button class="btn-nav-map" onclick="apriNavigatore(${i})" title="Naviga">↗️</button>
 <button class="btn-del-tappa" onclick="rimuoviTappa(${i})" title="Elimina">🗑️</button>
 </div>
@@ -445,7 +472,22 @@ if(confirm("Eliminare le consegne selezionate?")) { tappe = tappe.filter(t => !t
 function svuotaCompletate() { tappe = tappe.filter(t => !t.fatta); salvaERenderizza(); }
 
 /* NAVIGATORE E GPS */
-function apriNavigatore(i) { window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`, '_blank'); } 
+function apriNavigatore(i) { 
+    tappaInNavigazione = i; // Memorizza quale tappa stiamo navigando
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(tappe[i].indirizzo)}&travelmode=driving`, '_blank'); 
+} 
+
+// Listener per autocompletamento quando torni sull'app da Maps
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && tappaInNavigazione !== -1) {
+        if (!tappe[tappaInNavigazione].fatta) {
+            tappe[tappaInNavigazione].fatta = true;
+            salvaERenderizza();
+        }
+        tappaInNavigazione = -1; // Reset
+    }
+});
+
 function calcolaDistanza(lat1, lon1, lat2, lon2) { const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat / 2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2)**2; return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); }
 
 async function ottimizzaGiro() {
@@ -467,12 +509,19 @@ async function eseguiAlgoritmo(uLat, uLng, endPoint) {
 let nonFatte = tappe.filter(t => !t.fatta);
 if (nonFatte.length === 0) return alert("Giro completato!");
 for (let t of nonFatte) if (!t.lat) { const c = await new Promise(r => geocoder.geocode({address: t.indirizzo}, (res, st) => r((st==='OK')?res[0].geometry.location:null))); if(c) { t.lat=c.lat(); t.lng=c.lng(); } }
-// Ordinamento Nearest Neighbor di base (ignora endpoint temporaneamente per limiti calcolo)
+// Ordinamento Nearest Neighbor di base
 nonFatte.sort((a,b) => (a.lat ? calcolaDistanza(uLat, uLng, a.lat, a.lng) : 999) - (b.lat ? calcolaDistanza(uLat, uLng, b.lat, b.lng) : 999));
 tappe = [...nonFatte, ...tappe.filter(t => t.fatta)]; salvaERenderizza();
 }
 
-function avanzaGiro() { const p = tappe.find(t => !t.fatta); if (p) apriNavigatore(tappe.indexOf(p)); else alert("Giro terminato!"); }
+function avanzaGiro() { 
+    const p = tappe.find(t => !t.fatta); 
+    if (p) {
+        apriNavigatore(tappe.indexOf(p)); 
+    } else {
+        alert("Giro terminato!"); 
+    }
+}
 </script>
 </body>
 </html>
